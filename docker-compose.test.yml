@@ -1,0 +1,21 @@
+# Ephemeral test deployment: no published ports, smoke tests run inside the edge network.
+services:
+  smoke:
+    build: ./tests/smoke
+    profiles: [test]
+    read_only: true
+    tmpfs: [/tmp]
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
+    environment:
+      SMOKE_BASE_URL: https://${PT_SITE_ADDRESS}
+      SMOKE_ORIGIN: https://${PT_SITE_ADDRESS}
+      SMOKE_CA: /caddy/caddy/pki/authorities/local/root.crt
+      SMOKE_ADMIN_USER: ${PT_ADMIN_USER:-admin}
+      SMOKE_ADMIN_PASSWORD: ${SMOKE_ADMIN_PASSWORD:-}
+      SMOKE_TOTP_SECRET: ${SMOKE_TOTP_SECRET:-}
+    volumes:
+      - caddy_data:/caddy:ro
+    networks: [edge]
+    depends_on:
+      caddy: { condition: service_healthy }

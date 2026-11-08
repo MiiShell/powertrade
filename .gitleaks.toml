@@ -1,0 +1,9 @@
+# Extends the default gitleaks ruleset
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Allowed non-secret files"
+paths = [
+  '''\.env\.example$''',
+]

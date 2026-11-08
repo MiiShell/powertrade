@@ -15,8 +15,8 @@ One web app that combines:
 ## Fixed Decisions
 | Area | Decision |
 |---|---|
-| Platform | Web app, self-hosted via Docker Compose (Mac for dev, Linux server for prod) |
-| Users | Single user, but auth is mandatory |
+| Platform | Web app, self-hosted via Docker Compose; prod now local (https://localhost:8443), later VPS via Tailscale |
+| Users | Single user; in-app auth (Argon2id + optional TOTP, Redis sessions) |
 | Frontend | Next.js (App Router) + TypeScript + Tailwind; charts via **TradingView Lightweight Charts** (Apache-2.0, keep attribution) |
 | Backend | Python 3.12 + FastAPI + Pydantic v2; indicators via pandas/numpy (own implementations, unit-tested against known values) |
 | Jobs | Worker + scheduler (ARQ or Celery + Redis) for ingestion, alerts, report generation |
@@ -33,14 +33,16 @@ One web app that combines:
 - **Seasonality panel**: normalized YTD performance of the current year vs. previous N years (like TradingView "Saisonal"), plus avg. monthly return heatmap
 - Watchlist sidebar with last price, change, change %
 
-### F2 — Stock list with scorecard (Aktienfinder-style)
-- Columns: price, market cap, P/E, P/B, dividend yield, payout ratio, revenue/EPS CAGR (5/10y), earnings stability, debt ratio, fair value, upside %
-- **Scorecard** (0–15 points, transparent formula shown in UI): earnings growth, earnings stability (R² of EPS trend), dividend growth/continuity, balance sheet quality, valuation vs. history
-- Sort, filter, saved screens
+### F2 — Stock list, quality scores & ranking (Aktienfinder-style) — formulas: `docs/SCORING.md`, UI: `docs/REFERENCE_AKTIENFINDER.md`
+- List columns per reference (scores badges, Merkzettel, Kauf-Limit, yield, dividend growth, stability, performance, 200-day distance …)
+- **3 quality profiles (1–10)**: Dividendenertrag, Dividendenwachstum, Gewinnwachstum — 10-segment bars per criterion
+- **Ranking (0–100)** against user-defined strategy targets (Soll/Ist)
+- Qualitätscheck charts (earnings/CF/dividends, revenue & margins, debt & Tilgungskraft, buybacks)
+- Sort, filter, saved screens, Merkzettel lists
 
-### F3 — Fair-value valuation
-- Methods (each shown separately + weighted blend): historical average P/E × forward EPS, historical P/B × book value, DCF (editable assumptions), Graham number, dividend discount model (dividend payers)
-- Show 5/10/20y average P/E & P/B tables (as in Abilitato reports)
+### F3 — Fair-value valuation — formulas: `docs/SCORING.md`
+- **Standard**: Ø multiple × per-share metric (FV bereinigt default; bil. Gewinn, Cash-Flow, Umsatz, Dividende), valuation bands, 3y forecast corridor, editable multiples, return calculator
+- **Pro**: P/B history, DCF (editable + sensitivity), Graham, DDM, weighted blend with sector profiles
 - Every number must link to its source + timestamp
 
 ### F4 — Price alerts
@@ -84,13 +86,13 @@ Interface `MarketDataProvider` / `FundamentalsProvider` / `CryptoProvider`; one 
 - Respect rate limits & ToS; local caching; nightly fundamentals sync, intraday price polling only for watchlist
 
 ## Security Requirements (non-negotiable)
-- Auth: passkey/WebAuthn or OIDC (e.g. Authelia/Authentik) behind reverse proxy (Caddy/Traefik) with TLS
+- Auth: in-app single admin (Argon2id + TOTP, revocable Redis sessions, login throttling) behind Caddy with TLS; passkeys optional later
 - Secrets only via env/Docker secrets; never in repo, logs or frontend; `.env.example` only
 - Anthropic + data API keys server-side only; backend proxies all external calls
 - Treat all fetched content (news, filings, web) as untrusted → prompt-injection guard: pass as data in delimited blocks, no tool execution derived from it
 - Input validation (Pydantic), parameterized SQL only, CSP + security headers, CSRF protection, rate limiting
 - Least-privilege DB user; backups (pg_dump, encrypted) + restore test
-- Dependency scanning (pip-audit, npm audit, Trivy for images), pre-commit with gitleaks
+- Dependency scanning (pip-audit, npm audit, Trivy for images); secret scanning via gitleaks in CI (GitHub Action, uses `.gitleaks.toml`)
 - Containers as non-root, read-only FS where possible, pinned image digests
 
 ## Engineering Standards

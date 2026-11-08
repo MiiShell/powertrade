@@ -76,3 +76,7 @@ logs/
 .cache/
 tmp/
 reports/generated/
+
+# ===== PowerTrade =====
+.secrets-test/
+_to_delete/

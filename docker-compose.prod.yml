@@ -1,0 +1,5 @@
+# Local production: HTTPS bound to localhost only. Later (VPS via Tailscale) see README.
+services:
+  caddy:
+    ports:
+      - "127.0.0.1:${PT_HTTPS_PORT:-8443}:443"

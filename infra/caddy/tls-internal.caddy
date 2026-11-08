@@ -1,0 +1,2 @@
+# Self-signed via Caddy internal CA (local / test)
+tls internal

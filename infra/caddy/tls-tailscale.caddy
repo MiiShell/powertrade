@@ -1,0 +1,2 @@
+# Tailscale: Caddy fetches the *.ts.net certificate from tailscaled automatically.
+# Requires the tailscaled socket mounted into the caddy container (see README).
