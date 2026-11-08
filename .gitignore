@@ -1,0 +1,78 @@
+# ===== Secrets (never commit) =====
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.crt
+*.p12
+*.pfx
+secrets/
+infra/secrets/
+**/credentials*.json
+**/service-account*.json
+
+# ===== OS / Editor =====
+.DS_Store
+.AppleDouble
+.LSOverride
+Thumbs.db
+.idea/
+.vscode/*
+!.vscode/extensions.json
+*.swp
+*~
+
+# ===== Python (backend / worker) =====
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+build/
+dist/
+.venv/
+venv/
+.python-version
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+coverage.xml
+htmlcov/
+.ipynb_checkpoints/
+
+# ===== Node / Next.js (frontend) =====
+node_modules/
+.next/
+out/
+.turbo/
+.vercel/
+*.tsbuildinfo
+next-env.d.ts
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+.pnpm-store/
+
+# ===== Testing =====
+playwright-report/
+test-results/
+blob-report/
+
+# ===== Docker / Data / Backups =====
+docker-compose.override.yml
+pgdata/
+data/
+backups/
+*.dump
+*.sql.gz
+*.sqlite
+*.db
+
+# ===== Logs / Cache / Generated =====
+logs/
+*.log
+.cache/
+tmp/
+reports/generated/

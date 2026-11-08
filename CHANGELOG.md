@@ -8,3 +8,4 @@
 - Target: Claude Code, single user (auth mandatory)
 ### Added
 - `PROMPT.md`: build prompt incl. features (charting SMA/EMA/RSI/seasonality, scorecard, fair value, alerts, Claude chart analysis, Abilitato-style reports), data model, sources, security requirements, phases, Definition of Done
+- `.gitignore`: secrets (.env, keys, certs), Python, Node/Next.js, Docker volumes, DB dumps/backups, logs, OS/editor files
