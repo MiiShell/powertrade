@@ -41,16 +41,16 @@ Stand: 2026-11-09 · Legende: ✅ live (deployt & geprüft) · 🔄 gebaut, Depl
 | Technische Ratings | ✅ | 11 Oszillatoren + 15 MAs, 3 Tachos, 1T/1W/1M, TradingView-Regeln (BTC-Abgleich 25/26 → Ichimoku-Fix) |
 | Pivots | ✅ | Classic, Fibonacci, Camarilla, Woodie, DM (gegen TradingView verifiziert) |
 | Saisonalität | ✅ | Jahreslinien, Durchschnitt, Jahresbereich, Monats-Heatmap |
-| Scorecard / Ranking / Fundamentaltabelle | 🔄 | Phase 4 |
+| Scorecard / Ranking / Fundamentaltabelle | ✅ | Phase 4 |
 
 ## Fundamentaldaten & Scores (Phase 4)
 | Feature | Status | Details |
 |---|---|---|
-| SEC-EDGAR-Import | 🔄 | 10–15+ Jahre US, Bereinigung, Restatements, Split-Bereinigung nach Einreichungsdatum |
-| FMP-Fallback | 🔄 | Statements + Dividenden (4 Calls/Aktie, budgetiert) |
-| 3 Qualitäts-Scores (1–10) | 🔄 | Dividendenertrag, Dividendenwachstum, Gewinnwachstum |
-| Ranking 0–100 + Strategie-Editor | 🔄 | Soll/Ist/Zielerreichung, Gewichte |
-| Tab „Aktienliste“ | 🔄 | sortierbar, Score-Badges, Ranking-Balken |
+| SEC-EDGAR-Import | ✅ | 10–15+ Jahre US, Bereinigung, Restatements, Split-Bereinigung nach Einreichungsdatum |
+| FMP-Fallback | ✅ | Statements + Dividenden (4 Calls/Aktie, budgetiert) |
+| 3 Qualitäts-Scores (1–10) | ✅ | Dividendenertrag, Dividendenwachstum, Gewinnwachstum |
+| Ranking 0–100 + Strategie-Editor | ✅ | Soll/Ist/Zielerreichung, Gewichte |
+| Tab „Aktienliste“ | ✅ | sortierbar, Score-Badges, Ranking-Balken |
 
 ## Geplant
 | Feature | Phase |

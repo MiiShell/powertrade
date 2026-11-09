@@ -20,6 +20,15 @@ if not PASSWORD:
     raise SystemExit("SMOKE_ADMIN_PASSWORD is empty - run via scripts/test-deploy.sh")
 
 
+def pytest_configure(config: pytest.Config) -> None:
+    config.addinivalue_line("markers", "run_last: run after all other smoke tests (trips the login throttle)")
+
+
+def pytest_collection_modifyitems(items: list[pytest.Item]) -> None:
+    """Move `run_last` tests to the end regardless of file names (the throttle blocks later logins)."""
+    items.sort(key=lambda item: item.get_closest_marker("run_last") is not None)  # stable sort keeps order
+
+
 @pytest.fixture(scope="session")
 def ca() -> str:
     deadline = time.time() + 60

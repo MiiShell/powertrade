@@ -11,7 +11,7 @@ Stand: 2026-11-09 (Übergabe von Claude-Chat an Claude Code)
 | 3 | Saisonalität | ✅ |
 | – | Detailseite: Technicals, Pivots, Profil, Kennzahlen | ✅ |
 | – | Chart-Widgets, RSI optional, Pine Scripts + Editor | ✅ |
-| 4 | Fundamentaldaten (SEC/FMP), 3 Qualitäts-Scores, Ranking, Aktienliste | 🔄 gebaut, **nicht deployt** |
+| 4 | Fundamentaldaten (SEC/FMP), 3 Qualitäts-Scores, Ranking, Aktienliste | ✅ deployt 2026-11-09 (Browser-Check offen) |
 | 5 | Fair Value (Standard + Pro) | ⏳ |
 | 6 | Alerts | ⏳ |
 | 7 | Claude-Chartanalyse | ⏳ |
@@ -20,12 +20,13 @@ Stand: 2026-11-09 (Übergabe von Claude-Chat an Claude Code)
 | 10 | Hardening, Paid-Provider, VPS/Tailscale | ⏳ |
 
 ## Nächste Schritte (in dieser Reihenfolge)
-1. **Phase 4 abschließen**
-   - `./scripts/test-deploy.sh` → Fehler beheben (neu: Migration 0007, `test_stocks.py`).
-   - `./scripts/deploy.sh` (fragt nach Bestätigung).
-   - Live prüfen: Tab „Aktienliste“, NVDA-Scorecard; `fundamentals_run` muss `source=sec` zeigen
-     (`docker compose -p powertrade exec db psql -U powertrade -c "select * from fundamentals_run"`).
-   - Plausibilität NVDA: EPS-Reihe split-bereinigt stetig (keine Sprünge 2021/2024), Median-KGV realistisch (30–60).
+1. **Phase 4 – Rest**
+   - Erledigt 2026-11-09: Test-Deploy grün (39 Smoke-Tests), Prod-Deploy (Migration 0007), `fundamentals_run`
+     NVDA `source=sec`, 218 Facts; EPS-Reihe split-bereinigt stetig; Median-KGV 50,5; FV_std 247 $.
+   - Offen: Browser-Check Tab „Aktienliste“ + NVDA-Scorecard (manuell, Login mit TOTP).
+   - **Entscheidung offen – Gewinnwachstum bei exponentiellem EPS:** lineare Trendlinie über 10 J startet bei NVDA
+     ≤ 0 → `earnings_growth_10y/5y = N/A` → 0 Punkte (laut SCORING.md §8 so gewollt), obwohl EPS ×180 gestiegen.
+     Option: log-lineare Trendlinie, wenn alle Werte > 0 (Fallback linear). Betrifft Spec + `scores.py`.
 2. **Phase 5 – Fair-Value-Engine** (Spezifikation: `docs/SCORING.md` §4/§5)
    - Tägliche Multiples (KGV/KCV/KUV/Div-Rendite) aus TTM bzw. letztem GJ, Median über 5/8/10/15/20 J.
    - FV-Linien (bil. Gewinn, Cashflow, Umsatz, Dividende), Bewertungslinien ±10 %-Schritte, Prognosekorridor

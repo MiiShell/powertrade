@@ -1,6 +1,6 @@
 """Smoke tests against a running test deployment (through Caddy, TLS verified against Caddy's internal CA).
 
-Tests run in file order; the rate-limit test must stay last.
+The rate-limit test is marked `run_last` (conftest moves it behind all other smoke tests).
 """
 
 import socket
@@ -112,6 +112,7 @@ def test_data_services_not_reachable_from_edge(host: str, port: int) -> None:
         socket.create_connection((host, port), timeout=3).close()
 
 
+@pytest.mark.run_last
 def test_zz_login_rate_limit(client: httpx.Client) -> None:
     codes = [_login(client, password=f"wrong-{i}").status_code for i in range(7)]
     assert 429 in codes, codes

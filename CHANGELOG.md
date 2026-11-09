@@ -12,6 +12,7 @@
 7. Phase 2: Chart (Candles, Volumen, SMA/EMA, RSI + Divergenzen, S/R-Linien)
 8. Detailseite: Kopfkarte, Firmenprofil (FMP, bereinigt importiert), technische Ratings (11 Oszillatoren + 15 MAs, Tachos, 1T/1W/1M, Snapshots), Pivots (5 Methoden), Saisonalität (Chart + Heatmap)
 9. Bugfixes aus Deploy-Läufen: Compose-Interpolation, Dateirechte (0600), fehlende Runtime-Dependency `httpx`, Datumstyp für asyncpg
+10. Phase 4: Fundamentaldaten (SEC EDGAR / FMP), 3 Qualitäts-Scores, Ranking, Aktienliste – deployt (Migration 0007)
 
 ### Phasenplan
 | Phase | Inhalt | Status |
@@ -22,7 +23,7 @@
 | 3 | Saisonalität | ✅ erledigt (Teil der Detailseite) |
 | – | Detailseite (Technicals, Pivots, Profil, Kennzahlen) | ✅ erledigt, im Browser geprüft (BTC-Signale vs. TradingView: 25/26 → mit Ichimoku-Fix 26/26 erwartet) |
 | – | Chart-Widgets (Spannen), RSI optional, Pine Scripts (PineTS) + Editor | ✅ erledigt, im Browser geprüft |
-| 4 | Fundamentaldaten-Import, Aktienliste, Qualitäts-Scores (3 Profile) + Ranking | 🔄 gebaut, Deploy + Browser-Check offen |
+| 4 | Fundamentaldaten-Import, Aktienliste, Qualitäts-Scores (3 Profile) + Ranking | ✅ deployt, Browser-Check offen |
 | 5 | Fair-Value-Engine (Standard + Pro), Bewertungslinien, Prognosekorridor | ⏳ offen |
 | 6 | Alerts (Preis, MA-Cross, RSI, Fair Value) via Telegram/E-Mail/Push | ⏳ offen |
 | 7 | Claude-Chartanalyse auf Anfrage | ⏳ offen |
@@ -187,3 +188,20 @@
 - `docs/features.md`: feature inventory with status + API overview
 - `docs/phase.md`: phase status, concrete next steps (finish Phase 4 deploy, Phase 5 fair value, Phase 6 alerts), tech debt
 - `.gitignore`: `.claude/settings.local.json`
+
+## 2026-11-09 — Phase 4 deployment
+### Fixed
+- Smoke tests: the login rate-limit test ran before the new `test_stocks.py` (alphabetical file order) and
+  throttled all later logins (429). It is now marked `run_last`; `tests/smoke/conftest.py` sorts such tests to
+  the end independent of file names.
+### Deployed
+- `./scripts/test-deploy.sh` green (39 smoke tests, migration roundtrip), `./scripts/deploy.sh` with backup,
+  migration `0007`, readiness ok.
+### Verified (live)
+- `fundamentals_run`: NVDA `source=sec`, `status=success`, 218 facts.
+- NVDA diluted EPS split-adjusted without jumps at the 2021 (4:1) and 2024 (10:1) splits; median P/E 50.5;
+  FV_std 247 USD; payback years 0 (net cash).
+### Known issue
+- Earnings-growth criterion is N/A (0 points) for NVDA: the linear EPS trendline starts <= 0 for exponential
+  growth. Behaviour matches SCORING.md §8; a log-linear fit is proposed (decision pending).
+
