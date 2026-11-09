@@ -135,3 +135,10 @@ table.stocks td { vertical-align: middle; white-space: nowrap; }
 th.sortable { cursor: pointer; user-select: none; }
 .strategy { display: flex; flex-direction: column; gap: 8px; background: #1f232b; padding: 12px; border-radius: 10px; }
 .strategy input { width: 90px; padding: 6px; }
+
+/* Fair value (Phase 5) */
+.kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 8px; }
+.kpi { background: #0f1115; border: 1px solid #2a2f3a; border-radius: 8px; padding: 10px 12px; display: flex; flex-direction: column; gap: 4px; }
+.kpi strong { font-size: 1.1rem; }
+.fv-chart { width: 100%; height: 380px; }
+.seg button:disabled { opacity: .4; cursor: not-allowed; }

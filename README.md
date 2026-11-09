@@ -102,6 +102,15 @@ Open https://localhost:8443. Trust the local CA once (command is printed by the 
   `docs/SCORING.md`; strategy targets/weights editable (Aktienliste → „Strategie bearbeiten“).
 - UI: tab **Aktienliste** (sortable, score badges, ranking bar) and scorecard/ranking/fundamentals on the details page.
 
+## Fair value (Phase 5, standard model)
+- Details page → panel **Fairer Wert**: price vs. FV line (earnings adjusted = default, cash flow, revenue, dividend),
+  ±10 % valuation bands, dashed 3-year forecast corridor (EPS trend, no analyst consensus), KPIs (FV, distance,
+  buy limit −20 %, expected return p.a.), yearly multiples table, purchase calculator.
+- Average multiples = median of daily multiples over 5/8/10/15/20 years or all; period and overrides are stored per
+  stock (`fair_value_setting`) and also drive the score's Discount criterion.
+- API: `GET /api/instruments/{id}/fairvalue?period=10`, `PUT /api/instruments/{id}/fairvalue/settings`
+  `{"period": "10", "overrides": {"pe": 30}}`. Formulas: `docs/SCORING.md` §4 and §8.
+
 ## Development
 ```bash
 cd backend && uv sync --python 3.12 && uv run pytest && uv run ruff check . && uv run mypy app

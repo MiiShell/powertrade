@@ -89,7 +89,7 @@ export function ScorecardPanel({ instrumentId }: { instrumentId: number }) {
               })}
             </div>
             <p className="muted small-note">
-              Fair Value (Standard): {nfmt(card.metrics.fair_value as number | null)} · Ø KGV {nfmt(card.metrics.median_pe as number | null, 1)} · {card.metrics.eps_years as number} Geschäftsjahre
+              Fair Value (bereinigt): {nfmt(card.metrics.fair_value as number | null)} · Ø KGV {nfmt(card.metrics.median_pe as number | null, 1)} · {card.metrics.eps_years as number} Geschäftsjahre
               {card.run && ` · Quelle ${card.run.source?.toUpperCase() ?? "–"}, Import ${new Date(card.run.finished_at).toLocaleDateString("de-DE")}`}
               {notes.length > 0 && ` · Hinweis: ${notes.join("; ")}`}
             </p>

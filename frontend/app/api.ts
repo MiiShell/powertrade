@@ -83,6 +83,7 @@ export type Scorecard = {
   ranking: { points: number; criteria: RankRow[] } | null;
   strategy: { id: number | null; name: string };
   fundamentals: Record<string, [number, number][]>;
+  fair_value: { fv_std: number | null; upside: number | null; expected_return: number | null; buy_limit: number | null; period: string } | null;
   run: { source: string | null; status: string; facts: number; error: string | null; finished_at: string } | null;
 };
 export type StockRow = {
@@ -92,7 +93,30 @@ export type StockRow = {
   ranking_points: number | null; dividend_yield: number | null; dividend_cagr_5y: number | null;
   dividend_not_cut_years: number | null; earnings_stability: number | null; earnings_growth_5y: number | null;
   payback_years: number | "inf" | null; fair_value: number | null; discount: number | null;
+  fv_upside: number | null; expected_return: number | null;
   performance_5y: number | null; fundamentals: string | null;
+};
+export type FvLine = "earnings_adj" | "cashflow" | "revenue" | "dividend";
+export type FvMultiple = "pe" | "pcf" | "ps" | "dy";
+export type FairValue = {
+  available: boolean; as_of: string; period: string; saved_period: string; periods: string[]; price: number | null;
+  eps_basis: string; medians: Record<FvMultiple, number | null>; overrides: Partial<Record<FvMultiple, number>>;
+  multiples: Record<FvMultiple, number | null>; fair_value: Record<FvLine, number | null>; fv_std: number | null;
+  upside: number | null; buy_limit: number | null; margin_of_safety: number;
+  bands: { k: number; pct: number; value: number }[];
+  history: Record<FvLine, { date: string; fiscal_year: number; value: number }[]>;
+  corridor: {
+    estimate: string; growth: number; growth_used: number; capped: boolean;
+    anchor: { date: string; eps: number; fair_value: number };
+    points: { fiscal_year: number; date: string; eps: number; fair_value: number }[];
+  } | null;
+  expected_return: number | null; dividend_yield: number | null; dps: number | null;
+  years: {
+    fiscal_year: number; period_end: string; close: number | null; eps: number | null; ocf_ps: number | null;
+    rev_ps: number | null; dps: number | null; pe: number | null; pcf: number | null; ps: number | null; dy: number | null;
+    d_eps: number | null; d_ocf: number | null; d_rev: number | null; d_dps: number | null;
+  }[];
+  prices: [string, number][];
 };
 export type Strategy = { id: number | null; name: string; targets: Record<string, number>; weights: Record<string, number> };
 export type SelfCheck = { worker: string; db_write: string; db_read: string; latency_ms: number };
@@ -151,6 +175,10 @@ export const api = {
   scorecard: (id: number) => request<Scorecard>(`/api/instruments/${id}/scorecard`),
   refreshFundamentals: (id: number) =>
     request<{ status: string }>(`/api/instruments/${id}/fundamentals/refresh`, { method: "POST" }),
+  fairValue: (id: number, period?: string) =>
+    request<FairValue>(`/api/instruments/${id}/fairvalue${period ? `?period=${encodeURIComponent(period)}` : ""}`),
+  saveFairValue: (id: number, body: { period: string; overrides: Partial<Record<FvMultiple, number>> }) =>
+    request<FairValue>(`/api/instruments/${id}/fairvalue/settings`, { method: "PUT", body: JSON.stringify(body) }),
   strategy: () => request<Strategy>("/api/ranking/strategy"),
   saveStrategy: (s: { name: string; targets: Record<string, number>; weights: Record<string, number> }) =>
     request<Strategy>("/api/ranking/strategy", { method: "PUT", body: JSON.stringify(s) }),

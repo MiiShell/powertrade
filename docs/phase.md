@@ -12,7 +12,8 @@ Stand: 2026-11-09 (Übergabe von Claude-Chat an Claude Code)
 | – | Detailseite: Technicals, Pivots, Profil, Kennzahlen | ✅ |
 | – | Chart-Widgets, RSI optional, Pine Scripts + Editor | ✅ |
 | 4 | Fundamentaldaten (SEC/FMP), 3 Qualitäts-Scores, Ranking, Aktienliste | ✅ deployt 2026-11-09 (Browser-Check offen) |
-| 5 | Fair Value (Standard + Pro) | ⏳ |
+| 5 | Fair Value Standard | ✅ deployt 2026-11-09 (Browser-Check offen) |
+| 5b | Fair Value Pro-Methoden | ⏳ |
 | 6 | Alerts | ⏳ |
 | 7 | Claude-Chartanalyse | ⏳ |
 | 8 | Claude-Berichte | ⏳ |
@@ -20,20 +21,12 @@ Stand: 2026-11-09 (Übergabe von Claude-Chat an Claude Code)
 | 10 | Hardening, Paid-Provider, VPS/Tailscale | ⏳ |
 
 ## Nächste Schritte (in dieser Reihenfolge)
-1. **Phase 4 – Rest**
-   - Erledigt 2026-11-09: Test-Deploy grün (39 Smoke-Tests), Prod-Deploy (Migration 0007), `fundamentals_run`
-     NVDA `source=sec`, 218 Facts; EPS-Reihe split-bereinigt stetig; Median-KGV 50,5; FV_std 247 $.
-   - Offen: Browser-Check Tab „Aktienliste“ + NVDA-Scorecard (manuell, Login mit TOTP).
-   - **Entscheidung offen – Gewinnwachstum bei exponentiellem EPS:** lineare Trendlinie über 10 J startet bei NVDA
-     ≤ 0 → `earnings_growth_10y/5y = N/A` → 0 Punkte (laut SCORING.md §8 so gewollt), obwohl EPS ×180 gestiegen.
-     Option: log-lineare Trendlinie, wenn alle Werte > 0 (Fallback linear). Betrifft Spec + `scores.py`.
-2. **Phase 5 – Fair-Value-Engine** (Spezifikation: `docs/SCORING.md` §4/§5)
-   - Tägliche Multiples (KGV/KCV/KUV/Div-Rendite) aus TTM bzw. letztem GJ, Median über 5/8/10/15/20 J.
-   - FV-Linien (bil. Gewinn, Cashflow, Umsatz, Dividende), Bewertungslinien ±10 %-Schritte, Prognosekorridor
-     (ohne Konsens: Trend-Extrapolation, markiert), „Rendite Fairer Wert“, Renditerechner.
-   - Pro-Methoden: KBV-Historie, DCF (2 Stufen, Sensitivität), Graham, DDM, Blend nach Sektorprofil.
-   - Discount-Kriterium der Scores auf die neue FV_std umstellen.
-   - UI: FV-Chart wie Aktienfinder (Light/Pro), editierbare Ø-Multiples.
+1. **Browser-Check (manuell)**: Tab „Aktienliste“ (neue Spalten), NVDA-Details → Panel „Fairer Wert“ (Chart,
+   Zeitraum-Umschalter, Ø-Multiples speichern/zurücksetzen, Renditerechner) und Scorecard.
+   Live-Werte NVDA 2026-11-09: FV bereinigt 243 $ (Ø KGV 49,7, 10 J.), Kurs 186,64 $, Gewinnwachstum 10 J.
+   56,8 % (log-linear), Scores 6/6/7, Ranking 76.
+2. **Phase 5b – Pro-Methoden** (`docs/SCORING.md` §5): KBV-Historie (braucht BVPS = equity / shares), DCF 2-stufig
+   mit Sensitivität, Graham, DDM, Blend nach Sektorprofil, Toggle „Pro“ im FV-Panel, Kauf-Limit wahlweise Pro.
 3. **Phase 6 – Alerts**: Regeln (Preis über/unter, %-Änderung, MA-Cross, RSI, FV-Upside), Telegram-Bot (Token als
    Docker-Secret), Dedup/Cooldown, Alert-Historie, Tab/Panel.
 

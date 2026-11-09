@@ -3,6 +3,7 @@
 import { ColorType, LineSeries, LineStyle, createChart, type UTCTimestamp } from "lightweight-charts";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { api, type Counts, type Details as DetailsData, type Seasonality, type TaGroup, type Tf } from "./api";
+import { FairValuePanel } from "./fairvalue";
 import { ScorecardPanel } from "./scorecard";
 
 const LABELS: Record<string, string> = {
@@ -65,6 +66,7 @@ export function Details({ instrumentId }: { instrumentId: number }) {
         </div>
       )}
 
+      {data.instrument.type === "stock" && <FairValuePanel instrumentId={instrumentId} currency={data.instrument.currency} />}
       {data.instrument.type === "stock" && <ScorecardPanel instrumentId={instrumentId} />}
 
       <div className="panel">

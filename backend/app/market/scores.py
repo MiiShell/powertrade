@@ -2,7 +2,6 @@
 
 import math
 from dataclasses import dataclass, field
-from statistics import median
 from typing import Any
 
 # criterion -> (min, max) per profile; None = criterion not used in that profile
@@ -61,18 +60,34 @@ def stability(series: dict[int, float], n: int = 20) -> float | None:
     return round(math.copysign(r2, sxy), 4)
 
 
-def trend_growth(series: dict[int, float], n: int) -> float | None:
-    """CAGR (%) between fitted trendline start and end over the last n years; None if fit start <= 0."""
-    pts = _last(series, n + 1)
-    if len(pts) < 3:
-        return None
-    xs, ys = [p[0] for p in pts], [p[1] for p in pts]
+def _ols(xs: list[float], ys: list[float]) -> tuple[float, float]:
+    """Return (intercept at mean x, slope) of an OLS fit y ~ x."""
     mx, my = sum(xs) / len(xs), sum(ys) / len(ys)
     sxx = sum((x - mx) ** 2 for x in xs)
     slope = sum((x - mx) * (y - my) for x, y in zip(xs, ys, strict=True)) / sxx if sxx else 0.0
-    start, end = my + slope * (xs[0] - mx), my + slope * (xs[-1] - mx)
+    return my, slope
+
+
+def trend_growth(series: dict[int, float], n: int) -> float | None:
+    """Annual growth (%) of the fitted trend over the last n years.
+
+    All values > 0: log-linear fit ln(y) ~ year -> exp(slope) - 1 (handles exponential growers).
+    Otherwise: linear fit, CAGR between fitted start and end; None if fit start/end <= 0.
+    """
+    pts = _last(series, n + 1)
+    if len(pts) < 3:
+        return None
+    xs, ys = [float(p[0]) for p in pts], [p[1] for p in pts]
     years = xs[-1] - xs[0]
-    if start <= 0 or end <= 0 or years <= 0:
+    if years <= 0:
+        return None
+    if all(y > 0 for y in ys):
+        _, slope = _ols(xs, [math.log(y) for y in ys])
+        return round(float(math.expm1(slope)) * 100, 4)
+    my, slope = _ols(xs, ys)
+    mx = sum(xs) / len(xs)
+    start, end = my + slope * (xs[0] - mx), my + slope * (xs[-1] - mx)
+    if start <= 0 or end <= 0:
         return None
     return round(float((end / start) ** (1 / years) - 1) * 100, 4)
 
@@ -109,18 +124,6 @@ def payback_years(debt: float | None, cash: float | None, fcf: dict[int, float])
     return round(net / mean, 2) if mean > 0 else math.inf
 
 
-def fair_value_std(eps: dict[int, float], fy_close: dict[int, float]) -> dict[str, float] | None:
-    """Standard FV = median annual P/E (FY-end close / EPS, 0 < P/E <= 100, last 10 FY) x latest EPS."""
-    pes = [
-        fy_close[y] / e for y, e in _last(eps, 10) if y in fy_close and e > 0 and 0 < fy_close[y] / e <= 100
-    ]
-    latest = _last(eps, 1)
-    if len(pes) < 3 or not latest or latest[0][1] <= 0:
-        return None
-    pe = median(pes)
-    return {"fair_value": round(pe * latest[0][1], 4), "median_pe": round(pe, 2), "pe_years": len(pes)}
-
-
 def discount(price: float, fv: float | None) -> float | None:
     if not fv or fv <= 0:
         return None
@@ -154,9 +157,11 @@ def compute_metrics(
     series: dict[str, dict[int, float]],
     price: float | None,
     sma200: float | None,
-    fy_close: dict[int, float],
+    fv_std: float | None = None,
+    median_pe: float | None = None,
     is_financial: bool = False,
 ) -> Metrics:
+    """fv_std / median_pe come from the fair value engine (app.market.fairvalue, FV bereinigt)."""
     eps = series.get("eps_diluted", {})
     dps = {y: v for y, v in series.get("dps", {}).items() if v >= 0}
     m = Metrics(eps_years=len(eps), is_financial=is_financial)
@@ -175,9 +180,7 @@ def compute_metrics(
         )
     if price and sma200:
         m.momentum = round((price / sma200 - 1) * 100, 4)
-    fv = fair_value_std(eps, fy_close)
-    if fv:
-        m.fair_value, m.median_pe = fv["fair_value"], fv["median_pe"]
+    m.fair_value, m.median_pe = fv_std, median_pe
     if price:
         m.discount = discount(price, m.fair_value)
     last_dps = _last(dps, 1)

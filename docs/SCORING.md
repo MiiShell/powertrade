@@ -115,7 +115,23 @@ Stocks only. ETFs: aggregated scores = holdings-weighted average (Phase 9), plus
 - Dividend yield = last fiscal-year DPS / current price.
 - Financials (sector Financial Services/Financials/Banks/Insurance): payback years N/A.
 
+## 8b. Implementation notes (v0.3, Phase 5)
+- **TrendGrowth**: if all values in the window are > 0, log-linear OLS `ln(X_t) ~ t`, growth = `exp(slope) − 1`
+  (correct for exponential growers such as NVDA, where a linear fit starts ≤ 0). Otherwise the linear fit from
+  section 1 applies (fit start/end ≤ 0 → N/A, scored 0 points).
+- **Daily stepping**: only annual data is available, so each fiscal year's per-share value applies from its period
+  end until the next fiscal year ends (no TTM). OCF/revenue per share = value / diluted shares.
+- **FV bereinigt = diluted EPS** (no adjusted-EPS source); "FV bil. Gewinn" is therefore identical and not shown.
+- Average multiple = median of daily multiples in the period, minimum 60 trading days, else N/A. Dividend yield
+  valid range (0, 30] %. User overrides: KGV/KCV 1–100, KUV 0.1–30, Div.-Rendite 0.01–30 %.
+- **Discount** now uses FV_std of the engine (stored period/overrides) instead of the annual approximation.
+- **Prognosekorridor** (trend, `estimate=trend`): mean line only; growth clamped to ±20 % p.a. (`capped` flag) to
+  avoid absurd extrapolations. "Rendite Fairer Wert" uses the corridor value 3 years from today.
+- Purchase calculator target: corridor FV in 3 years (fallback: today's FV_std); dividend assumed constant.
+- Pro methods (section 5) follow in Phase 5b.
+
 ## Changelog
+- v0.3: log-linear TrendGrowth, standard fair value implementation notes (section 8b).
 - v0.2.1: implementation notes (EPS basis, negative growth = 0 points, annual FV_std approximation).
 - v0.2: Aktienfinder-style standard model (3 profiles 1–10, ranking 0–100, multiple-based FV with bands & corridor); v0.1 methods moved to Pro.
 - v0.1: single scorecard 0–15 + blended FV (superseded).

@@ -1,4 +1,4 @@
-"""Phase 4: fundamentals import (fixture EDGAR data), quality scores, ranking, stock list."""
+"""Phase 4/5: fundamentals import (fixture EDGAR data), quality scores, ranking, stock list, fair value."""
 
 import time
 
@@ -81,3 +81,32 @@ def test_manual_refresh_limited_per_day(authed: httpx.Client) -> None:
     assert authed.post(f"/api/instruments/{iid}/fundamentals/refresh").status_code == 202
     again = authed.post(f"/api/instruments/{iid}/fundamentals/refresh")
     assert again.json()["status"] == "already requested today"
+
+
+def test_fair_value_model_and_settings(authed: httpx.Client) -> None:
+    iid = _wait_for(authed, "NVDA")["id"]
+    assert authed.get(f"/api/instruments/{iid}/fairvalue").status_code == 200
+    fv = authed.get(f"/api/instruments/{iid}/fairvalue", params={"period": "5"}).json()
+    assert fv["available"] and fv["period"] == "5" and fv["eps_basis"] == "diluted"
+    assert fv["fv_std"] and fv["fv_std"] > 0 and len(fv["bands"]) == 11 and fv["prices"]
+    assert fv["years"] and set(fv["fair_value"]) == {"earnings_adj", "cashflow", "revenue", "dividend"}
+    assert fv["corridor"]["estimate"] == "trend" and len(fv["corridor"]["points"]) == 3
+    # scorecard discount is based on FV_std of the engine
+    card = _card(authed, iid)
+    assert card["fair_value"]["fv_std"] == card["metrics"]["fair_value"]
+    # settings: validation, override, reset
+    url = f"/api/instruments/{iid}/fairvalue/settings"
+    assert authed.get(f"/api/instruments/{iid}/fairvalue", params={"period": "7"}).status_code == 422
+    assert authed.put(url, json={"period": "10", "overrides": {"pb": 2}}).status_code == 422
+    assert authed.put(url, json={"period": "10", "overrides": {"pe": 1000}}).status_code == 422
+    r = authed.put(url, json={"period": "15", "overrides": {"pe": 20}})
+    assert r.status_code == 200 and r.json()["saved_period"] == "15" and r.json()["multiples"]["pe"] == 20
+    eps = [y["eps"] for y in r.json()["years"] if y["eps"] is not None][-1]
+    assert abs(r.json()["fv_std"] - 20 * eps) < 1e-3
+    assert authed.put(url, json={"period": "10", "overrides": {}}).json()["overrides"] == {}
+    assert authed.get("/api/instruments/999999/fairvalue").status_code == 404
+
+
+def test_fair_value_requires_auth(client: httpx.Client) -> None:
+    assert client.get("/api/instruments/1/fairvalue").status_code == 401
+    assert client.put("/api/instruments/1/fairvalue/settings", json={}).status_code in (401, 403)

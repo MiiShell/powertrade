@@ -52,10 +52,22 @@ Stand: 2026-11-09 · Legende: ✅ live (deployt & geprüft) · 🔄 gebaut, Depl
 | Ranking 0–100 + Strategie-Editor | ✅ | Soll/Ist/Zielerreichung, Gewichte |
 | Tab „Aktienliste“ | ✅ | sortierbar, Score-Badges, Ranking-Balken |
 
+## Fair Value (Phase 5)
+| Feature | Status | Details |
+|---|---|---|
+| FV-Linien | ✅ | Gewinn bereinigt (Standard), Cashflow, Umsatz, Dividende; Median täglicher Multiples 5/8/10/15/20 J./Alle |
+| Bewertungslinien | ✅ | ±10 %-Schritte, grün unter-/rot überbewertet |
+| Prognosekorridor | ✅ | 3 J., EPS-Trend (log-linear, max. ±20 % p.a.), markiert als Schätzung |
+| Kennzahlen | ✅ | Abstand FV, Kauf-Limit (−20 %), Rendite Fairer Wert p.a., Jahrestabelle (KGV/KCV/KUV/Div., Δ-Werte) |
+| Editierbare Ø-Multiples | ✅ | je Aktie gespeichert, wirken auf den Discount im Score |
+| Renditerechner | ✅ | Betrag → Aktien, Kursgewinn, Dividende, Rendite p.a. |
+| Aktienliste | ✅ | neue Spalten „Abstand FV“, „Rendite FV p.a.“ |
+| Pro-Methoden (KBV, DCF, Graham, DDM, Blend) | ⏳ | Phase 5b |
+
 ## Geplant
 | Feature | Phase |
 |---|---|
-| Fair-Value-Engine (Standard + Pro), Bewertungslinien, Prognosekorridor, Renditerechner | 5 |
+| Fair Value Pro-Methoden (KBV-Historie, DCF, Graham, DDM, Blend nach Sektor) | 5b |
 | Alerts (Preis, MA-Cross, RSI, Fair Value) via Telegram/E-Mail/Push | 6 |
 | Claude-Chartanalyse auf Anfrage | 7 |
 | Claude-Berichte (Abilitato-Stil), PDF, Kostenbremse | 8 |

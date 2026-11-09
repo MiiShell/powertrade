@@ -13,6 +13,7 @@
 8. Detailseite: Kopfkarte, Firmenprofil (FMP, bereinigt importiert), technische Ratings (11 Oszillatoren + 15 MAs, Tachos, 1T/1W/1M, Snapshots), Pivots (5 Methoden), Saisonalität (Chart + Heatmap)
 9. Bugfixes aus Deploy-Läufen: Compose-Interpolation, Dateirechte (0600), fehlende Runtime-Dependency `httpx`, Datumstyp für asyncpg
 10. Phase 4: Fundamentaldaten (SEC EDGAR / FMP), 3 Qualitäts-Scores, Ranking, Aktienliste – deployt (Migration 0007)
+11. Phase 5: Fair Value Standard (FV-Linien, Bänder, Korridor, Renditerechner), log-lineares Gewinnwachstum – deployt (Migration 0008)
 
 ### Phasenplan
 | Phase | Inhalt | Status |
@@ -24,7 +25,8 @@
 | – | Detailseite (Technicals, Pivots, Profil, Kennzahlen) | ✅ erledigt, im Browser geprüft (BTC-Signale vs. TradingView: 25/26 → mit Ichimoku-Fix 26/26 erwartet) |
 | – | Chart-Widgets (Spannen), RSI optional, Pine Scripts (PineTS) + Editor | ✅ erledigt, im Browser geprüft |
 | 4 | Fundamentaldaten-Import, Aktienliste, Qualitäts-Scores (3 Profile) + Ranking | ✅ deployt, Browser-Check offen |
-| 5 | Fair-Value-Engine (Standard + Pro), Bewertungslinien, Prognosekorridor | ⏳ offen |
+| 5 | Fair-Value-Engine Standard, Bewertungslinien, Prognosekorridor, Renditerechner | ✅ deployt, Browser-Check offen |
+| 5b | Fair Value Pro-Methoden (KBV, DCF, Graham, DDM) | ⏳ offen |
 | 6 | Alerts (Preis, MA-Cross, RSI, Fair Value) via Telegram/E-Mail/Push | ⏳ offen |
 | 7 | Claude-Chartanalyse auf Anfrage | ⏳ offen |
 | 8 | Claude-Berichte (Abilitato-Stil), PDF-Export, Kostenbremse | ⏳ offen |
@@ -204,4 +206,23 @@
 ### Known issue
 - Earnings-growth criterion is N/A (0 points) for NVDA: the linear EPS trendline starts <= 0 for exponential
   growth. Behaviour matches SCORING.md §8; a log-linear fit is proposed (decision pending).
+
+## 2026-11-09 — Phase 5: fair value (standard model)
+### Added
+- `app/market/fairvalue.py`: daily-stepped multiples (KGV, KCV, KUV, dividend yield), medians over 5/8/10/15/20 y/all,
+  FV lines (earnings adjusted = FV_std, cash flow, revenue, dividend), ±10 % bands, buy limit (MoS 20 %), 3-year
+  trend corridor (growth clamped ±20 %), expected return p.a., yearly multiples table, weekly price series.
+- Migration `0008`: `fair_value_setting` (period + user-overridden average multiples per stock).
+- API: `GET /api/instruments/{id}/fairvalue?period=`, `PUT /api/instruments/{id}/fairvalue/settings` (validated).
+- UI: panel „Fairer Wert“ on the details page (chart, period switch, line switch, editable averages, yearly table,
+  purchase calculator); stock list columns „Abstand FV“ and „Rendite FV p.a.“.
+- Tests: `tests/test_fairvalue.py` (stepping, limits, lines, overrides, corridor cap, expected return), smoke tests
+  for the endpoints/settings/auth.
+### Changed
+- TrendGrowth: log-linear fit when all values > 0 (linear fallback). NVDA earnings growth 10 y: N/A → 56.8 %,
+  earnings-growth score 5 → 7.
+- Score criterion Discount uses FV_std of the engine; the annual approximation `fair_value_std` was removed.
+- `docs/SCORING.md` v0.3 (section 8b implementation notes).
+### Deployed
+- Test deploy green (41 smoke tests, migration roundtrip incl. 0008), `deploy.sh` with backup, readiness ok.
 

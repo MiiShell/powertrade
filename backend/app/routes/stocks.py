@@ -1,5 +1,5 @@
 from datetime import UTC, datetime
-from typing import Annotated
+from typing import Annotated, Literal
 
 from arq.connections import ArqRedis
 from fastapi import APIRouter, Depends, HTTPException, status
@@ -8,6 +8,7 @@ from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncEngine
 
 from app.deps import CurrentUser, get_engine, get_redis
+from app.market import fairvalue as fvm
 from app.market import stockdata
 from app.market.scores import RANKING_CRITERIA
 
@@ -49,6 +50,41 @@ async def refresh(
     day = datetime.now(UTC).strftime("%Y%m%d")
     job = await redis.enqueue_job("fundamentals", instrument_id, _job_id=f"fund:{instrument_id}:manual:{day}")
     return {"status": "queued" if job else "already requested today"}
+
+
+Period = Literal["5", "8", "10", "15", "20", "all"]
+
+
+@router.get("/instruments/{instrument_id}/fairvalue")
+async def fair_value(
+    instrument_id: int,
+    _user: CurrentUser,
+    engine: Annotated[AsyncEngine, Depends(get_engine)],
+    period: Period | None = None,
+) -> dict[str, object]:
+    await _exists(engine, instrument_id)
+    return await stockdata.fair_value(engine, instrument_id, period)
+
+
+class FvSettingsIn(BaseModel):
+    period: Period = "10"
+    overrides: dict[str, float | None] = Field(default_factory=dict, max_length=len(fvm.MULTIPLES))
+
+
+@router.put("/instruments/{instrument_id}/fairvalue/settings")
+async def put_fv_settings(
+    instrument_id: int,
+    body: FvSettingsIn,
+    _user: CurrentUser,
+    engine: Annotated[AsyncEngine, Depends(get_engine)],
+) -> dict[str, object]:
+    await _exists(engine, instrument_id)
+    try:
+        overrides = fvm.clean_overrides(body.overrides)
+    except ValueError as exc:
+        raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, str(exc)) from exc
+    await stockdata.save_fv_settings(engine, instrument_id, body.period, overrides)
+    return await stockdata.fair_value(engine, instrument_id)
 
 
 class StrategyIn(BaseModel):

@@ -22,6 +22,8 @@ const COLS: Col[] = [
   { key: "payback_years", label: "Tilgung J.", get: (r) => (r.payback_years === "inf" ? 9999 : r.payback_years), fmt: (r) => nfmt(r.payback_years, 1), num: true },
   { key: "fair_value", label: "Fair Value", get: (r) => r.fair_value, num: true },
   { key: "discount", label: "Discount", get: (r) => r.discount, fmt: (r) => nfmt(r.discount, 1), num: true },
+  { key: "fv_upside", label: "Abstand FV", get: (r) => r.fv_upside, fmt: (r) => pct(r.fv_upside), num: true },
+  { key: "expected_return", label: "Rendite FV p.a.", get: (r) => r.expected_return, fmt: (r) => pct(r.expected_return), num: true },
 ];
 
 export function Stocks({ onOpen }: { onOpen: (id: number) => void }) {

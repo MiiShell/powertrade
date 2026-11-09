@@ -7,7 +7,6 @@ from app.market.scores import (
     cagr,
     compute_metrics,
     discount,
-    fair_value_std,
     payback_years,
     profile_scores,
     ranking,
@@ -25,6 +24,18 @@ def test_stability_and_growth() -> None:
     assert stability({2020: 1.0, 2021: 1.0}) is None
     assert trend_growth(GROW, 10) == pytest.approx(10.0, abs=1.5)
     assert trend_growth({y: 5 - i for i, y in enumerate(range(2015, 2025))}, 10) is None  # fitted end <= 0
+    assert trend_growth(GROW, 10) == pytest.approx(10.0, abs=1e-9)  # log-linear: exact for exponential series
+
+
+def test_trend_growth_exponential_and_mixed_sign() -> None:
+    # NVDA-like: x40 in 10 years; a linear fit starts <= 0, the log-linear fit gives ~44.6 % p.a.
+    expo = {2015 + i: 0.03 * 1.446**i for i in range(11)}
+    assert trend_growth(expo, 10) == pytest.approx(44.6, abs=0.1)
+    # a non-positive value -> linear fallback (here a rising trend with a loss year)
+    mixed = {2015: 1.0, 2016: 2.0, 2017: -0.5, 2018: 4.0, 2019: 5.0, 2020: 6.0}
+    g = trend_growth(mixed, 10)
+    assert g is not None and g > 0
+    assert trend_growth({2020: 1.0, 2021: 2.0}, 10) is None  # < 3 points
     assert cagr(GROW, 5) == pytest.approx(10.0, abs=1e-6)
 
 
@@ -37,11 +48,7 @@ def test_dividend_helpers() -> None:
     assert payback_years(None, 0, {2023: 1}) is None
 
 
-def test_fair_value_and_discount() -> None:
-    eps = {2020: 1.0, 2021: 2.0, 2022: 2.0, 2023: 4.0}
-    close = {2020: 20.0, 2021: 30.0, 2022: 40.0, 2023: 100.0}  # P/E 20, 15, 20, 25 -> median 20
-    fv = fair_value_std(eps, close)
-    assert fv == {"fair_value": 80.0, "median_pe": 20.0, "pe_years": 4}
+def test_discount() -> None:
     assert discount(80.0, 80.0) == 5.5
     assert discount(40.0, 80.0) == 10.0  # 50 % below FV -> capped
     assert discount(200.0, 80.0) == 1.0
@@ -61,9 +68,8 @@ def _series(dps: bool = True) -> dict[str, dict[int, float]]:
 
 
 def test_profiles_and_ranking() -> None:
-    m = compute_metrics(
-        _series(), price=30.0, sma200=28.0, fy_close={2014 + i: 20 * 1.1**i for i in range(11)}
-    )
+    m = compute_metrics(_series(), price=30.0, sma200=28.0, fv_std=40.0, median_pe=15.0)
+    assert m.fair_value == 40.0 and m.discount == 8.0  # 25 % below FV_std
     assert m.pays_dividend and m.payback_years == 2.0 and m.momentum == pytest.approx(7.1429, abs=1e-3)
     p = profile_scores(m)
     assert set(p) == {"dividend_yield", "dividend_growth", "earnings_growth"}
@@ -88,12 +94,10 @@ def test_profiles_and_ranking() -> None:
 
 
 def test_no_dividend_profiles_na_and_negative_trend_penalised() -> None:
-    m = compute_metrics(_series(dps=False), price=30.0, sma200=None, fy_close={})
+    m = compute_metrics(_series(dps=False), price=30.0, sma200=None)
     p = profile_scores(m)
     assert p["dividend_yield"]["score"] is None and p["earnings_growth"]["score"] is not None
-    bad = compute_metrics(
-        {"eps_diluted": {y: 5 - i for i, y in enumerate(range(2015, 2025))}}, 10.0, 10.0, {}
-    )
+    bad = compute_metrics({"eps_diluted": {y: 5 - i for i, y in enumerate(range(2015, 2025))}}, 10.0, 10.0)
     g = next(
         c
         for c in profile_scores(bad)["earnings_growth"]["criteria"]
