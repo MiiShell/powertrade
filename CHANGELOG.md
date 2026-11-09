@@ -226,3 +226,9 @@
 ### Deployed
 - Test deploy green (41 smoke tests, migration roundtrip incl. 0008), `deploy.sh` with backup, readiness ok.
 
+## 2026-11-09 — Fair value chart widget
+### Added
+- Chart view widget „Fairer Wert“ (stocks only): FV_std, distance to price, position within the ±50 % bands, buy
+  limit, expected return; click opens the details page.
+- API `GET /api/instruments/{id}/fairvalue/summary` (small payload; `{"available": false}` without fundamentals).
+

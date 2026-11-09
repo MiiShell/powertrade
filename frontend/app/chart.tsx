@@ -17,7 +17,7 @@ import {
   type UTCTimestamp,
 } from "lightweight-charts";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { api, type ChartConfig, type ChartData, type PineScript, type Stats, type WatchItem } from "./api";
+import { api, type ChartConfig, type ChartData, type PineScript, type FvSummary, type Stats, type WatchItem } from "./api";
 import { BandFill, toRgba } from "./chart-fill";
 import { Details, big } from "./details";
 import { runPine, type PineBar, type PineResult } from "./pine-client";
@@ -100,6 +100,7 @@ export function Chart({ instrumentId, view, onSelect, onView }: {
   const [menuOpen, setMenuOpen] = useState(false);
   const [editorOpen, setEditorOpen] = useState(false);
   const [stats, setStats] = useState<Stats | null>(null);
+  const [fvSum, setFvSum] = useState<FvSummary | null>(null);
 
   const box = useRef<HTMLDivElement>(null);
   const chartRef = useRef<IChartApi | null>(null);
@@ -150,6 +151,9 @@ export function Chart({ instrumentId, view, onSelect, onView }: {
     let active = true;
     void api.stats(id).then((r) => {
       if (active) setStats(r.status === 200 && r.data && "price" in r.data ? r.data : null);
+    });
+    void api.fairValueSummary(id).then((r) => {
+      if (active) setFvSum(r.status === 200 ? r.data : null);
     });
     return () => {
       active = false;
@@ -392,6 +396,7 @@ export function Chart({ instrumentId, view, onSelect, onView }: {
           <WidgetRange label="Tagesspanne" lo={stats.day_range[0]} hi={stats.day_range[1]} value={stats.price} />
           <WidgetRange label="Wochenspanne" lo={stats.range_week[0]} hi={stats.range_week[1]} value={stats.price} />
           <WidgetRange label="52-Wochen-Spanne" lo={stats.range_52w[0]} hi={stats.range_52w[1]} value={stats.price} />
+          {fvSum?.available && <WidgetFairValue fv={fvSum} price={stats.price} onOpen={() => onView("details")} />}
         </div>
       )}
       {pineRuns.filter((r) => !r.result.ok).map((r) => (
@@ -448,6 +453,23 @@ export function Chart({ instrumentId, view, onSelect, onView }: {
         }} />
       )}
     </div>
+  );
+}
+
+function WidgetFairValue({ fv, price, onOpen }: { fv: Extract<FvSummary, { available: true }>; price: number; onOpen: () => void }) {
+  // Position of the price within the valuation bands FV -50 % .. FV +50 % (green = below FV, red = above).
+  const lo = fv.fv_std * 0.5;
+  const hi = fv.fv_std * 1.5;
+  const p = Math.min(100, Math.max(0, ((price - lo) / (hi - lo)) * 100));
+  const up = fv.upside ?? 0;
+  return (
+    <button className="widget widget-btn" title="Details: Fairer Wert" onClick={onOpen}>
+      <div className="row"><span className="muted">Fairer Wert ({fv.period === "all" ? "Alle" : `${fv.period}J`})</span>
+        <span className={up >= 0 ? "ok" : "fail"}>{up > 0 ? "+" : ""}{fmt(fv.upside)} %</span></div>
+      <strong className="w-price">{fmt(fv.fv_std)}</strong>
+      <div className="range"><div className="bar fv-bar"><div className="marker" style={{ left: `${p}%` }} /></div></div>
+      <span className="muted small">Kauf-Limit {fmt(fv.buy_limit)} · Rendite p.a. {fmt(fv.expected_return)} %</span>
+    </button>
   );
 }
 

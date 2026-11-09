@@ -105,8 +105,13 @@ def test_fair_value_model_and_settings(authed: httpx.Client) -> None:
     assert abs(r.json()["fv_std"] - 20 * eps) < 1e-3
     assert authed.put(url, json={"period": "10", "overrides": {}}).json()["overrides"] == {}
     assert authed.get("/api/instruments/999999/fairvalue").status_code == 404
+    summ = authed.get(f"/api/instruments/{iid}/fairvalue/summary").json()
+    assert summ["available"] and summ["fv_std"] and len(summ["bands"]) == 11 and "prices" not in summ
+    btc = _wait_for(authed, "BTC")["id"]
+    assert authed.get(f"/api/instruments/{btc}/fairvalue/summary").json() == {"available": False}
 
 
 def test_fair_value_requires_auth(client: httpx.Client) -> None:
     assert client.get("/api/instruments/1/fairvalue").status_code == 401
+    assert client.get("/api/instruments/1/fairvalue/summary").status_code == 401
     assert client.put("/api/instruments/1/fairvalue/settings", json={}).status_code in (401, 403)

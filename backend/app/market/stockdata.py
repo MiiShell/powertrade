@@ -125,6 +125,18 @@ async def fair_value(
     return out
 
 
+FV_SUMMARY_KEYS = ("price", "fv_std", "upside", "buy_limit", "expected_return", "period", "bands")
+
+
+async def fair_value_summary(engine: AsyncEngine, iid: int) -> dict[str, Any]:
+    """Small payload for the chart widget (no price history / tables)."""
+    series = await load_series(engine, iid)
+    if not series.get("eps_diluted"):
+        return {"available": False}
+    fv = await fair_value(engine, iid, series=series)
+    return {"available": fv["fv_std"] is not None, **{k: fv[k] for k in FV_SUMMARY_KEYS}}
+
+
 async def scorecard(engine: AsyncEngine, iid: int, strategy: dict[str, Any] | None = None) -> dict[str, Any]:
     series = await load_series(engine, iid)
     async with engine.connect() as conn:

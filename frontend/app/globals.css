@@ -142,3 +142,6 @@ th.sortable { cursor: pointer; user-select: none; }
 .kpi strong { font-size: 1.1rem; }
 .fv-chart { width: 100%; height: 380px; }
 .seg button:disabled { opacity: .4; cursor: not-allowed; }
+.widget-btn { text-align: left; color: var(--text); font-weight: 400; border: 0; cursor: pointer; }
+.widget-btn:hover { outline: 1px solid #3a3f4a; }
+.range .bar.fv-bar { background: linear-gradient(90deg, #238636 0%, #3fb95055 45%, #f0b429 50%, #f8514955 55%, #da3633 100%); }

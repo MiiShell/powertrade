@@ -118,6 +118,10 @@ export type FairValue = {
   }[];
   prices: [string, number][];
 };
+export type FvSummary =
+  | { available: false }
+  | { available: true; price: number | null; fv_std: number; upside: number | null; buy_limit: number | null;
+      expected_return: number | null; period: string; bands: { k: number; pct: number; value: number }[] };
 export type Strategy = { id: number | null; name: string; targets: Record<string, number>; weights: Record<string, number> };
 export type SelfCheck = { worker: string; db_write: string; db_read: string; latency_ms: number };
 
@@ -177,6 +181,7 @@ export const api = {
     request<{ status: string }>(`/api/instruments/${id}/fundamentals/refresh`, { method: "POST" }),
   fairValue: (id: number, period?: string) =>
     request<FairValue>(`/api/instruments/${id}/fairvalue${period ? `?period=${encodeURIComponent(period)}` : ""}`),
+  fairValueSummary: (id: number) => request<FvSummary>(`/api/instruments/${id}/fairvalue/summary`),
   saveFairValue: (id: number, body: { period: string; overrides: Partial<Record<FvMultiple, number>> }) =>
     request<FairValue>(`/api/instruments/${id}/fairvalue/settings`, { method: "PUT", body: JSON.stringify(body) }),
   strategy: () => request<Strategy>("/api/ranking/strategy"),

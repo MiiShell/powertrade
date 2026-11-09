@@ -29,7 +29,7 @@ Stand: 2026-11-09 · Legende: ✅ live (deployt & geprüft) · 🔄 gebaut, Depl
 | SMA/EMA (je bis 6 Perioden) | ✅ | Backend-berechnet mit Warm-up |
 | RSI + Divergenzen (optional) | ✅ | Wilder-RSI, Pivot-Divergenzen (bull/bear) |
 | S/R-Linien | ✅ | Klick zum Setzen, gespeichert, max. 50 |
-| Widgets über dem Chart | ✅ | Kurs/Volumen, Tages-, Wochen-, 52-Wochen-Spanne |
+| Widgets über dem Chart | ✅ | Kurs/Volumen, Tages-, Wochen-, 52-Wochen-Spanne, Fairer Wert (Aktien; Abstand, Bänder ±50 %, Klick → Details) |
 | Pine Scripts | ✅ | PineTS im isolierten Worker; plot/hline/fill; Built-ins [Hoss] OBV RSI, [Hoss] VWAP Deviation |
 | Pine-Editor | ✅ | neu/bearbeiten/testen/speichern/duplizieren/löschen |
 | Pine-Tabellen/Labels/Boxen, `input()`-UI | ⏳ | offen |

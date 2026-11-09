@@ -66,6 +66,14 @@ async def fair_value(
     return await stockdata.fair_value(engine, instrument_id, period)
 
 
+@router.get("/instruments/{instrument_id}/fairvalue/summary")
+async def fair_value_summary(
+    instrument_id: int, _user: CurrentUser, engine: Annotated[AsyncEngine, Depends(get_engine)]
+) -> dict[str, object]:
+    await _exists(engine, instrument_id)
+    return await stockdata.fair_value_summary(engine, instrument_id)
+
+
 class FvSettingsIn(BaseModel):
     period: Period = "10"
     overrides: dict[str, float | None] = Field(default_factory=dict, max_length=len(fvm.MULTIPLES))
