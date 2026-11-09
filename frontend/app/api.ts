@@ -122,6 +122,23 @@ export type FvSummary =
   | { available: false }
   | { available: true; price: number | null; fv_std: number; upside: number | null; buy_limit: number | null;
       expected_return: number | null; period: string; bands: { k: number; pct: number; value: number }[] };
+export type AlertKind =
+  | "price_above" | "price_below" | "change_pct" | "ma_cross_above" | "ma_cross_below" | "rsi_above" | "rsi_below"
+  | "fv_upside_above";
+export type AlertIn = {
+  instrument_id: number; kind: AlertKind; params: Record<string, number | string>; note: string;
+  cooldown_minutes: number; notify_telegram: boolean; is_active: boolean;
+};
+export type AlertRule = AlertIn & {
+  id: number; symbol: string; name: string; type: string; currency: string; description: string;
+  last_state: boolean | null; last_value: number | null; last_evaluated_at: string | null;
+  last_triggered_at: string | null; created_at: string;
+};
+export type AlertEvent = {
+  id: number; alert_id: number | null; instrument_id: number; symbol: string; kind: AlertKind; triggered_at: string;
+  value: number | null; message: string; delivery: "pending" | "sent" | "failed" | "skipped";
+  delivery_error: string | null; read_at: string | null;
+};
 export type Strategy = { id: number | null; name: string; targets: Record<string, number>; weights: Record<string, number> };
 export type SelfCheck = { worker: string; db_write: string; db_read: string; latency_ms: number };
 
@@ -187,6 +204,14 @@ export const api = {
   strategy: () => request<Strategy>("/api/ranking/strategy"),
   saveStrategy: (s: { name: string; targets: Record<string, number>; weights: Record<string, number> }) =>
     request<Strategy>("/api/ranking/strategy", { method: "PUT", body: JSON.stringify(s) }),
+  alerts: () => request<{ alerts: AlertRule[]; kinds: Record<string, string>; telegram: string }>("/api/alerts"),
+  createAlert: (body: AlertIn) => request<AlertRule>("/api/alerts", { method: "POST", body: JSON.stringify(body) }),
+  updateAlert: (id: number, body: AlertIn) =>
+    request<AlertRule>(`/api/alerts/${id}`, { method: "PUT", body: JSON.stringify(body) }),
+  deleteAlert: (id: number) => request<null>(`/api/alerts/${id}`, { method: "DELETE" }),
+  alertEvents: (limit = 100) => request<{ events: AlertEvent[]; unread: number }>(`/api/alerts/events?limit=${limit}`),
+  markAlertsRead: () => request<{ marked: number }>("/api/alerts/events/read", { method: "POST" }),
+  telegramTest: () => request<{ status: string }>("/api/alerts/telegram/test", { method: "POST" }),
   usage: () => request<{ fmp: FmpUsage }>("/api/providers/usage"),
   selfcheck: () => request<SelfCheck>("/api/system/selfcheck", { method: "POST" }),
 };

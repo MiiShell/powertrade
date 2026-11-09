@@ -14,6 +14,7 @@
 9. Bugfixes aus Deploy-Läufen: Compose-Interpolation, Dateirechte (0600), fehlende Runtime-Dependency `httpx`, Datumstyp für asyncpg
 10. Phase 4: Fundamentaldaten (SEC EDGAR / FMP), 3 Qualitäts-Scores, Ranking, Aktienliste – deployt (Migration 0007)
 11. Phase 5: Fair Value Standard (FV-Linien, Bänder, Korridor, Renditerechner), log-lineares Gewinnwachstum – deployt (Migration 0008)
+12. Phase 6: Alerts (Regeln, Flanke + Cooldown, Telegram, Historie, Tab) – deployt (Migration 0009)
 
 ### Phasenplan
 | Phase | Inhalt | Status |
@@ -27,7 +28,8 @@
 | 4 | Fundamentaldaten-Import, Aktienliste, Qualitäts-Scores (3 Profile) + Ranking | ✅ deployt, Browser-Check offen |
 | 5 | Fair-Value-Engine Standard, Bewertungslinien, Prognosekorridor, Renditerechner | ✅ deployt, Browser-Check offen |
 | 5b | Fair Value Pro-Methoden (KBV, DCF, Graham, DDM) | ⏳ offen |
-| 6 | Alerts (Preis, MA-Cross, RSI, Fair Value) via Telegram/E-Mail/Push | ⏳ offen |
+| 6 | Alerts (Preis, %-Änderung, MA-Cross, RSI, Fair Value) via Telegram + In-App | ✅ deployt, Telegram-Secrets offen |
+| 6b | Alerts per E-Mail / Web-Push | ⏳ offen |
 | 7 | Claude-Chartanalyse auf Anfrage | ⏳ offen |
 | 8 | Claude-Berichte (Abilitato-Stil), PDF-Export, Kostenbremse | ⏳ offen |
 | 9 | Kreuzreferenzen: ETF-Overlap, Sektor-Exposure, Korrelation, Beziehungsgraph | ⏳ offen |
@@ -231,4 +233,21 @@
 - Chart view widget „Fairer Wert“ (stocks only): FV_std, distance to price, position within the ±50 % bands, buy
   limit, expected return; click opens the details page.
 - API `GET /api/instruments/{id}/fairvalue/summary` (small payload; `{"available": false}` without fundamentals).
+
+## 2026-11-09 — Phase 6: alerts (Telegram + in-app)
+### Added
+- Migration `0009`: `alert` (rule, params, cooldown, edge state) and `alert_event` (history, delivery status, read).
+- `app/market/alerts.py`: param validation, conditions (price above/below, % change over N days, SMA/EMA cross,
+  RSI above/below, fair-value distance), edge trigger + cooldown, plain-text messages, DB layer.
+- `app/market/notify.py`: Telegram Bot API notifier (fixed host, no redirects, size/time limits, token never in
+  logs or stored errors), fixture notifier for test deployments, null notifier when not configured.
+- Worker: evaluation after every successful ingestion, jobs `alerts` (evaluate now) and `telegram_test`;
+  Telegram status in Redis (`pt:telegram:status`, never the token).
+- API `/api/alerts` (CRUD, events, mark read, Telegram test, max. 1/min); UI tab „Alerts“ with unread badge.
+- Secrets `telegram_bot_token` / `telegram_chat_id` (worker only), `set-secret.sh` validates both formats.
+- Tests: `tests/test_alerts.py` (validation, conditions, edge/cooldown, messages, Telegram mock incl. token
+  hiding), smoke `tests/smoke/test_alerts.py` (fire once, delivery, MA-cross arming, history, auth).
+### Deployed
+- Test deploy green (46 smoke tests, migration roundtrip incl. 0009), `deploy.sh` with backup, readiness ok.
+  Telegram not yet configured (empty secrets created) → alerts are in-app only until the secrets are set.
 

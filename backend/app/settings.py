@@ -18,7 +18,12 @@ SECRET_FIELDS = (
     "admin_password_hash",
     "admin_totp_secret",
     "fmp_api_key",
+    "telegram_bot_token",
+    "telegram_chat_id",
 )
+# Optional secrets mounted only into some containers (worker): read /run/secrets/<name> if present.
+OPTIONAL_SECRET_FILES = ("telegram_bot_token", "telegram_chat_id")
+SECRETS_DIR = Path("/run/secrets")
 
 
 class Settings(BaseSettings):
@@ -58,6 +63,10 @@ class Settings(BaseSettings):
     fmp_burst: int = 20
     fmp_bandwidth_mb_30d: int = 450
 
+    # Telegram alerts (worker only). Empty -> alerts are stored in-app only.
+    telegram_bot_token: str = ""
+    telegram_chat_id: str = ""
+
     login_max_attempts: int = 5
     login_window_s: int = 900
 
@@ -68,6 +77,8 @@ class Settings(BaseSettings):
             return data
         for name in SECRET_FIELDS:
             path = os.environ.get(f"PT_{name.upper()}_FILE")
+            if not path and name in OPTIONAL_SECRET_FILES and (SECRETS_DIR / name).is_file():
+                path = str(SECRETS_DIR / name)
             if path and not data.get(name):
                 data[name] = Path(path).read_text(encoding="utf-8").strip()
         return data

@@ -14,7 +14,8 @@ Stand: 2026-11-09 (Übergabe von Claude-Chat an Claude Code)
 | 4 | Fundamentaldaten (SEC/FMP), 3 Qualitäts-Scores, Ranking, Aktienliste | ✅ deployt 2026-11-09 (Browser-Check offen) |
 | 5 | Fair Value Standard | ✅ deployt 2026-11-09 (Browser-Check offen) |
 | 5b | Fair Value Pro-Methoden | ⏳ |
-| 6 | Alerts | ⏳ |
+| 6 | Alerts (Telegram + In-App) | ✅ deployt 2026-11-09 (Telegram-Secrets + Browser-Check offen) |
+| 6b | Alerts per E-Mail / Web-Push | ⏳ |
 | 7 | Claude-Chartanalyse | ⏳ |
 | 8 | Claude-Berichte | ⏳ |
 | 9 | Kreuzreferenzen | ⏳ |
@@ -27,10 +28,15 @@ Stand: 2026-11-09 (Übergabe von Claude-Chat an Claude Code)
    56,8 % (log-linear), Scores 6/6/7, Ranking 76.
 2. **Phase 5b – Pro-Methoden** (`docs/SCORING.md` §5): KBV-Historie (braucht BVPS = equity / shares), DCF 2-stufig
    mit Sensitivität, Graham, DDM, Blend nach Sektorprofil, Toggle „Pro“ im FV-Panel, Kauf-Limit wahlweise Pro.
-3. **Phase 6 – Alerts**: Regeln (Preis über/unter, %-Änderung, MA-Cross, RSI, FV-Upside), Telegram-Bot (Token als
-   Docker-Secret), Dedup/Cooldown, Alert-Historie, Tab/Panel.
+3. **Telegram einrichten (manuell)**: Bot bei @BotFather anlegen, Chat-ID ermitteln, dann
+   `./scripts/set-secret.sh telegram_bot_token`, `./scripts/set-secret.sh telegram_chat_id`, `./scripts/deploy.sh`,
+   im Tab „Alerts“ → „Test-Nachricht“. Browser-Check: Alert anlegen/deaktivieren/löschen, Historie, Badge im Tab.
+4. **Phase 7 – Claude-Chartanalyse** (PROMPT.md F5): Button „Mit Claude analysieren“, PNG + strukturiertes JSON,
+   strukturierte Antwort (Trend, Levels, Momentum, Szenarien, Konfidenz), Kostenbremse, API-Key als Docker-Secret.
 
 ## Offene Punkte / technische Schulden
+- Smoke-Tests: httpx `verify=<str>` deprecated → `ssl.create_default_context(cafile=...)`
+- Alerts: Intraday-Auswertung erst mit Intraday-Daten sinnvoll; E-Mail/Web-Push (6b)
 - Images auf Digests pinnen (timescaledb, redis, caddy, node, python, uv)
 - CSP `'unsafe-inline'` → Nonces
 - TOTP-Replay-Schutz

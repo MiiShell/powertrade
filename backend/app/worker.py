@@ -1,4 +1,4 @@
-"""ARQ worker: background jobs (ingestion now; alerts, reports in later phases)."""
+"""ARQ worker: background jobs (ingestion, fundamentals, profiles, alerts; reports in later phases)."""
 
 import logging
 from datetime import UTC, datetime
@@ -8,13 +8,15 @@ from arq import cron
 from sqlalchemy import text
 
 from app.db import create_engine
+from app.market import alerts as alert_svc
 from app.market.details import profiles_due, refresh_profile, store_snapshots
 from app.market.factory import fmp_budget
 from app.market.fundamentals import fundamentals_due, refresh_fundamentals
 from app.market.ingest import active_instrument_ids, ingest_instrument
+from app.market.notify import NotifyError, build_notifier
 from app.market.providers import build_providers
 from app.market.stockdata import store_snapshot
-from app.redis_conn import WORKER_HEARTBEAT_KEY, redis_settings
+from app.redis_conn import TELEGRAM_STATUS_KEY, WORKER_HEARTBEAT_KEY, redis_settings
 from app.settings import get_settings
 
 _settings = get_settings()
@@ -30,6 +32,11 @@ async def startup(ctx: dict[str, Any]) -> None:
         fmp_budget=fmp_budget(ctx["redis"], _settings),
         sec_contact=_settings.sec_contact,
     )
+    ctx["notifier"] = build_notifier(
+        _settings.providers_mode, ctx["http"], _settings.telegram_bot_token, _settings.telegram_chat_id
+    )
+    status = ctx["notifier"].name if ctx["notifier"].configured else getattr(ctx["notifier"], "reason", "off")
+    await ctx["redis"].set(TELEGRAM_STATUS_KEY, status)
     await heartbeat(ctx)
 
 
@@ -52,9 +59,34 @@ async def ping(ctx: dict[str, Any], nonce: str) -> str:
 async def ingest(ctx: dict[str, Any], instrument_id: int) -> dict[str, Any]:
     r = await ingest_instrument(ctx["engine"], ctx["providers"], instrument_id)
     snaps = await store_snapshots(ctx["engine"], instrument_id) if r.status == "success" else 0
+    fired = 0
     if r.status == "success":
         await store_snapshot(ctx["engine"], instrument_id)  # daily quality-score snapshot (price-dependent)
-    return {"status": r.status, "provider": r.provider, "rows": r.rows, "error": r.error, "snapshots": snaps}
+        fired = await alert_svc.evaluate_instrument(ctx["engine"], ctx["notifier"], instrument_id)
+    return {
+        "status": r.status,
+        "provider": r.provider,
+        "rows": r.rows,
+        "error": r.error,
+        "snapshots": snaps,
+        "alerts": fired,
+    }
+
+
+async def alerts(ctx: dict[str, Any], instrument_id: int) -> int:
+    """Evaluate one instrument's rules now (after a rule was created/changed)."""
+    return await alert_svc.evaluate_instrument(ctx["engine"], ctx["notifier"], instrument_id)
+
+
+async def telegram_test(ctx: dict[str, Any]) -> str:
+    n = ctx["notifier"]
+    if not n.configured:
+        return getattr(n, "reason", "telegram not configured")
+    try:
+        await n.send("✅ PowerTrade: Telegram-Alerts sind eingerichtet.")
+    except NotifyError as exc:
+        return str(exc)
+    return "sent"
 
 
 async def fundamentals(ctx: dict[str, Any], instrument_id: int) -> str:
@@ -84,7 +116,7 @@ async def schedule_ingestion(ctx: dict[str, Any]) -> int:
 
 
 class WorkerSettings:
-    functions: ClassVar[list[Any]] = [ping, ingest, profile, fundamentals]
+    functions: ClassVar[list[Any]] = [ping, ingest, profile, fundamentals, alerts, telegram_test]
     cron_jobs: ClassVar[list[Any]] = [
         cron(heartbeat, second={0, 10, 20, 30, 40, 50}, run_at_startup=True),
         cron(schedule_ingestion, minute=5, run_at_startup=True),

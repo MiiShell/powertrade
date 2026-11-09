@@ -4,6 +4,7 @@ from redis.asyncio import ConnectionPool
 from app.settings import Settings
 
 WORKER_HEARTBEAT_KEY = "pt:worker:heartbeat"
+TELEGRAM_STATUS_KEY = "pt:telegram:status"  # set by the worker at startup (never the token)
 
 
 def redis_settings(s: Settings) -> RedisSettings:

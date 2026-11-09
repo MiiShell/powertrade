@@ -145,3 +145,13 @@ th.sortable { cursor: pointer; user-select: none; }
 .widget-btn { text-align: left; color: var(--text); font-weight: 400; border: 0; cursor: pointer; }
 .widget-btn:hover { outline: 1px solid #3a3f4a; }
 .range .bar.fv-bar { background: linear-gradient(90deg, #238636 0%, #3fb95055 45%, #f0b429 50%, #f8514955 55%, #da3633 100%); }
+
+/* Alerts (Phase 6) */
+.alert-form { display: flex; flex-wrap: wrap; gap: 8px; align-items: flex-end; }
+.alert-form label { display: flex; flex-direction: column; gap: 4px; font-size: .8rem; color: var(--muted); }
+.alert-form label input, .alert-form label select { padding: 6px 8px; font-size: .9rem; min-width: 90px; }
+.alert-form label.grow { flex: 1; min-width: 160px; }
+.alert-form label.check { flex-direction: row; align-items: center; padding-bottom: 8px; }
+.badge-count { background: var(--accent); color: #fff; border-radius: 999px; padding: 0 7px; font-size: .7rem; margin-left: 6px; vertical-align: middle; }
+tr.unread td { background: #1f232b; }
+td.pre { white-space: pre-line; }

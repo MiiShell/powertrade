@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { Alerts } from "./alerts";
 import { api } from "./api";
 import { Chart } from "./chart";
 import { Status } from "./status";
@@ -11,6 +12,7 @@ const TABS = [
   { id: "watchlist", label: "Watchlist" },
   { id: "stocks", label: "Aktienliste" },
   { id: "chart", label: "Chart" },
+  { id: "alerts", label: "Alerts" },
   { id: "reports", label: "Claude Reports" },
   { id: "status", label: "Status" },
 ] as const;
@@ -32,6 +34,18 @@ export function Shell({ user, onLogout }: { user: string; onLogout: () => Promis
   const [tab, setTab] = useState<TabId>("watchlist");
   const [selected, setSelected] = useState<number | null>(null);
   const [view, setView] = useState<View>("chart");
+  const [unread, setUnread] = useState(0);
+
+  useEffect(() => {
+    let active = true;
+    const poll = () => void api.alertEvents(1).then((r) => active && r.data && setUnread(r.data.unread));
+    poll();
+    const t = setInterval(poll, 60000);
+    return () => {
+      active = false;
+      clearInterval(t);
+    };
+  }, [tab]);
 
   useEffect(() => {
     const sync = () => {
@@ -69,6 +83,7 @@ export function Shell({ user, onLogout }: { user: string; onLogout: () => Promis
               onClick={() => go(t.id)}
             >
               {t.label}
+              {t.id === "alerts" && unread > 0 && <span className="badge-count" aria-label={`${unread} neue Alerts`}>{unread}</span>}
             </button>
           ))}
         </nav>
@@ -89,6 +104,7 @@ export function Shell({ user, onLogout }: { user: string; onLogout: () => Promis
             onView={(v) => (selected ? openChart({ id: selected }, v) : setView(v))}
           />
         )}
+        {tab === "alerts" && <Alerts instrumentId={selected} />}
         {tab === "reports" && <ReportsPlaceholder />}
         {tab === "status" && <Status />}
       </section>

@@ -93,6 +93,8 @@ services:
   worker:
     <<: *backend
     command: ["arq", "app.worker.WorkerSettings"]
+    # Telegram secrets only for the worker (read from /run/secrets/<name>, see app/settings.py)
+    secrets: [db_app_password, db_owner_password, redis_password, session_secret, admin_password_hash, admin_totp_secret, fmp_api_key, telegram_bot_token, telegram_chat_id]
     # edge = outbound internet for data ingestion (Phase 1)
     networks: [data, edge]
     healthcheck:
@@ -155,3 +157,5 @@ secrets:
   admin_password_hash: { file: "${PT_SECRETS_DIR:-./secrets}/admin_password_hash" }
   admin_totp_secret: { file: "${PT_SECRETS_DIR:-./secrets}/admin_totp_secret" }
   fmp_api_key: { file: "${PT_SECRETS_DIR:-./secrets}/fmp_api_key" }
+  telegram_bot_token: { file: "${PT_SECRETS_DIR:-./secrets}/telegram_bot_token" }
+  telegram_chat_id: { file: "${PT_SECRETS_DIR:-./secrets}/telegram_chat_id" }

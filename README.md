@@ -111,6 +111,17 @@ Open https://localhost:8443. Trust the local CA once (command is printed by the 
 - API: `GET /api/instruments/{id}/fairvalue?period=10`, `PUT /api/instruments/{id}/fairvalue/settings`
   `{"period": "10", "overrides": {"pe": 30}}`. Formulas: `docs/SCORING.md` §4 and §8.
 
+## Alerts (Phase 6)
+- Tab **Alerts**: rules per instrument (price above/below, % change over N days, SMA/EMA cross, RSI above/below,
+  fair-value distance ≥ x %), cooldown, note, Telegram on/off; history with delivery status and unread badge.
+- Evaluated by the worker after every hourly ingestion and right after a rule is created/changed. Edge-triggered
+  (fires on "not met → met"), then cooldown; MA crosses are only reported from the second evaluation on.
+- Telegram (optional): create a bot with @BotFather, get your chat id, then
+  `./scripts/set-secret.sh telegram_bot_token`, `./scripts/set-secret.sh telegram_chat_id`, `./scripts/deploy.sh`.
+  Secrets are mounted into the worker only; messages are plain text. Without them alerts are stored in-app only.
+- API: `GET/POST /api/alerts`, `PUT/DELETE /api/alerts/{id}`, `GET /api/alerts/events`, `POST /api/alerts/events/read`,
+  `POST /api/alerts/telegram/test`.
+
 ## Development
 ```bash
 cd backend && uv sync --python 3.12 && uv run pytest && uv run ruff check . && uv run mypy app

@@ -11,6 +11,12 @@ if [[ ! -f secrets/fmp_api_key ]]; then
   : >secrets/fmp_api_key && chmod 644 secrets/fmp_api_key
   log "created empty secrets/fmp_api_key – set it with: ./scripts/set-secret.sh fmp_api_key"
 fi
+for opt in telegram_bot_token telegram_chat_id; do
+  if [[ ! -f "secrets/$opt" ]]; then
+    : >"secrets/$opt" && chmod 644 "secrets/$opt"
+    log "created empty secrets/$opt – Telegram alerts: ./scripts/set-secret.sh $opt"
+  fi
+done
 # shellcheck disable=SC1091
 set -a; source .env; set +a
 unset PT_SECRETS_DIR

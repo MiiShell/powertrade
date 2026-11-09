@@ -64,11 +64,19 @@ Stand: 2026-11-09 · Legende: ✅ live (deployt & geprüft) · 🔄 gebaut, Depl
 | Aktienliste | ✅ | neue Spalten „Abstand FV“, „Rendite FV p.a.“ |
 | Pro-Methoden (KBV, DCF, Graham, DDM, Blend) | ⏳ | Phase 5b |
 
+## Alerts (Phase 6)
+| Feature | Status | Details |
+|---|---|---|
+| Regeltypen | ✅ | Kurs über/unter, %-Änderung in N Tagen, Kreuzung SMA/EMA (oben/unten), RSI über/unter, Abstand zum FV ≥ x % (Aktien) |
+| Auswertung | ✅ | nach jedem stündlichen Import + sofort nach Anlegen/Ändern; Flanke + Cooldown (Standard 24 h) |
+| Telegram | ✅ | Bot-Token/Chat-ID als Docker-Secrets (nur Worker), Klartext ohne Markup, Test-Nachricht |
+| Tab „Alerts“ | ✅ | Regeln anlegen/aktivieren/löschen, Historie mit Zustellstatus, Ungelesen-Badge |
+
 ## Geplant
 | Feature | Phase |
 |---|---|
 | Fair Value Pro-Methoden (KBV-Historie, DCF, Graham, DDM, Blend nach Sektor) | 5b |
-| Alerts (Preis, MA-Cross, RSI, Fair Value) via Telegram/E-Mail/Push | 6 |
+| Alerts per E-Mail / Web-Push | 6b |
 | Claude-Chartanalyse auf Anfrage | 7 |
 | Claude-Berichte (Abilitato-Stil), PDF, Kostenbremse | 8 |
 | Kreuzreferenzen: ETF-Overlap, Sektor-Exposure, Korrelation, Beziehungsgraph | 9 |
