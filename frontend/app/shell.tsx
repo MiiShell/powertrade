@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import { Alerts } from "./alerts";
 import { api } from "./api";
 import { Chart } from "./chart";
+import { Reports } from "./reports";
 import { Status } from "./status";
 import { Stocks } from "./stocks";
 import { Watchlist } from "./watchlist";
@@ -105,18 +106,9 @@ export function Shell({ user, onLogout }: { user: string; onLogout: () => Promis
           />
         )}
         {tab === "alerts" && <Alerts instrumentId={selected} />}
-        {tab === "reports" && <ReportsPlaceholder />}
+        {tab === "reports" && <Reports instrumentId={selected} />}
         {tab === "status" && <Status />}
       </section>
-    </div>
-  );
-}
-
-function ReportsPlaceholder() {
-  return (
-    <div className="panel">
-      <h2>Claude Reports</h2>
-      <p className="muted">Aktienberichte (Abilitato-Stil) und Chart-Analysen auf Abruf folgen in Phase 7/8.</p>
     </div>
   );
 }

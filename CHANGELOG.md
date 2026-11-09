@@ -16,6 +16,7 @@
 11. Phase 5: Fair Value Standard (FV-Linien, Bänder, Korridor, Renditerechner), log-lineares Gewinnwachstum – deployt (Migration 0008)
 12. Phase 6: Alerts (Regeln, Flanke + Cooldown, Telegram, Historie, Tab) – deployt (Migration 0009)
 13. Fair-Value-Widget im Chart; Phase 7: Claude-Chartanalyse (Opus/Sonnet 5.5, Kostenbremse) – deployt (Migration 0010)
+14. Phase 8: Claude-Berichte (Tool Use auf DB-Snapshot, Websuche mit Quellen, SVG-Charts, Zahlen-Check, PDF/Markdown) – deployt (Migration 0011)
 
 ### Phasenplan
 | Phase | Inhalt | Status |
@@ -32,7 +33,7 @@
 | 6 | Alerts (Preis, %-Änderung, MA-Cross, RSI, Fair Value) via Telegram + In-App | ✅ deployt, Telegram-Secrets offen |
 | 6b | Alerts per E-Mail / Web-Push | ⏳ offen |
 | 7 | Claude-Chartanalyse auf Anfrage | ✅ deployt, API-Key offen |
-| 8 | Claude-Berichte (Abilitato-Stil), PDF-Export, Kostenbremse | ⏳ offen |
+| 8 | Claude-Berichte (Abilitato-Stil), PDF-Export, Kostenbremse | ✅ deployt, API-Key offen |
 | 9 | Kreuzreferenzen: ETF-Overlap, Sektor-Exposure, Korrelation, Beziehungsgraph | ⏳ offen |
 | 10 | Hardening, Security-Review, Backups, Paid-Provider-Switch, VPS via Tailscale | ⏳ offen |
 
@@ -273,4 +274,32 @@
 ### Deployed
 - Test deploy green (50 smoke tests, migration roundtrip incl. 0010), `deploy.sh` with backup, readiness ok.
   API key not set yet (analyzer `none`); the live API path is covered by mocked-SDK unit tests only.
+
+## 2026-11-09 — Phase 8: Claude stock reports
+### Added
+- `app/market/report_data.py`: DB snapshot per report (instrument, profile, market stats, 10 fiscal years with
+  margins/growth/FCF/net debt/BVPS/P/B/payout/share change, CAGRs, yearly prices, max drawdown, fair value, P/B vs.
+  median, scores, technical rating, DB source info).
+- `app/market/report_agent.py`: manual tool-use loop (Messages API, streaming, adaptive thinking, effort `high`,
+  prompt caching, server-side refusal fallback), client tools bound to the snapshot (no arguments), server-side web
+  search (`web_search_20260209`, max 6), strict `submit_report` tool validated with Pydantic, `pause_turn`
+  handling, one nudge if no report, per-report cost cap (1.50 USD, checked before every turn), heuristic number
+  check (German number formats, Mrd./Mio./%, "(extern)" exemption).
+- `app/market/report_charts.py`: dependency-free SVG charts (revenue/earnings/FCF, margins, EPS/DPS, balance sheet,
+  price vs. fair value), all text escaped, delivered as data URIs (`<img>`, no script context).
+- `app/market/reports.py`: versioned storage, shared budget guard (reservations of analyses + reports), worker run,
+  `ai_call_log` entry per report, Markdown export, stale-run expiry.
+- Migration `0011`: `report`. API: `POST /api/instruments/{id}/reports`, `GET /api/reports`, `GET /api/reports/{id}`,
+  `GET /api/reports/{id}/markdown`.
+- UI: tab „Claude Reports“ (create, version list with cost and warnings, report view with tables/charts, flagged
+  numbers, verified sources, print/PDF layout, Markdown download).
+- Tests: `tests/test_reports.py` (annual table, number check, tool payloads, SVG escaping, agent loop incl. parallel
+  tool results, `pause_turn`, nudge, cost cap, invalid submit, Markdown), smoke `tests/smoke/test_reports.py`.
+### Changed
+- Shared AI budget default 10 → 25 USD/month (`PT_AI_MONTHLY_BUDGET_USD`), new `PT_AI_REPORT_DAILY_LIMIT` (5).
+- Fixed: `fmt_num` turned the unit "Mrd." into "Mrd," (found by the new unit test).
+- ruff: German typographic characters (–, −) allowed in strings.
+### Deployed
+- Test deploy green (53 smoke tests, migration roundtrip incl. 0011), `deploy.sh` with backup, readiness ok.
+  API key not set yet; the live agent path is covered by mocked-SDK unit tests only.
 

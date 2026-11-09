@@ -167,3 +167,24 @@ td.pre { white-space: pre-line; }
 .scenario { background: #1f232b; border-radius: 10px; padding: 10px 12px; border-left: 4px solid #8b949e; display: flex; flex-direction: column; gap: 4px; }
 .scenario.s-bull { border-left-color: #3fb950; }
 .scenario.s-bear { border-left-color: #f85149; }
+
+/* Claude reports (Phase 8) */
+.report h1 { margin: 4px 0; font-size: 1.6rem; }
+.report h2 { margin: 14px 0 2px; font-size: 1.15rem; border-bottom: 1px solid #2a2f3a; padding-bottom: 4px; }
+.report p, .report li { line-height: 1.55; }
+.report-chart { width: 100%; max-width: 720px; height: auto; border-radius: 8px; margin: 6px 0; }
+table.kv td:nth-child(odd) { color: var(--muted); }
+mark { background: #f0b42955; color: inherit; border-radius: 3px; padding: 0 2px; }
+a.button { display: inline-block; text-decoration: none; color: var(--text); padding: 6px 12px; border-radius: 8px; background: #2a2f3a; font-size: .85rem; }
+@media print {
+  @page { margin: 14mm; }
+  body, .app, .content, .panel { background: #fff !important; color: #111 !important; }
+  .topbar, .no-print, button { display: none !important; }
+  .panel { padding: 0; box-shadow: none; }
+  .report, .report * { color: #111 !important; }
+  .report h2 { border-color: #ccc; break-after: avoid; }
+  .report-chart, table { break-inside: avoid; }
+  .muted { color: #555 !important; }
+  mark { background: #fde68a !important; }
+  a { color: #1d4ed8 !important; }
+}

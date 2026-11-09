@@ -81,12 +81,22 @@ Stand: 2026-11-09 · Legende: ✅ live (deployt & geprüft) · 🔄 gebaut, Depl
 | Kostenbremse | ✅ | Monatsbudget (Standard 10 $) mit Reservierung je Analyse, max. 30/Tag, Kosten je Aufruf in `ai_call_log` |
 | Historie | ✅ | frühere Analysen je Instrument mit Status, Konfidenz, Kosten |
 
+## Claude-Berichte (Phase 8)
+| Feature | Status | Details |
+|---|---|---|
+| Bericht auf Knopfdruck | ✅ | Tab „Claude Reports“: Aktie + Modell (Opus 5.5 / Sonnet 5.5) wählen |
+| Abschnitte | ✅ | Überblick-Tabelle, Geschäftsmodell, Segmente, These, Kurs, KPIs, Guidance, Umsatz/Gewinn/Margen, Bilanz, Kapitalallokation, Bewertung (KGV/KBV vs. Historie, FV), Chancen/Risiken, Fazit, Quellen |
+| Zahlen aus der DB | ✅ | Tool Use auf einen gespeicherten Daten-Snapshot; Tabellen + 5 SVG-Charts serverseitig |
+| Websuche | ✅ | qualitative Recherche mit Quellen; Quellen gegen Suchergebnisse verifiziert, externe Zahlen „(extern)“ |
+| Zahlen-Check | ✅ | Zahlen im Text ohne DB-Treffer werden markiert |
+| Versionen & Export | ✅ | Version je Aktie, Druck/PDF über den Browser, Markdown-Download |
+| Kostenbremse | ✅ | gemeinsames KI-Budget 25 $/Monat, max. 1,50 $ und 5 Berichte pro Tag, Kosten je Bericht |
+
 ## Geplant
 | Feature | Phase |
 |---|---|
 | Fair Value Pro-Methoden (KBV-Historie, DCF, Graham, DDM, Blend nach Sektor) | 5b |
 | Alerts per E-Mail / Web-Push | 6b |
-| Claude-Berichte (Abilitato-Stil), PDF, Kostenbremse | 8 |
 | Kreuzreferenzen: ETF-Overlap, Sektor-Exposure, Korrelation, Beziehungsgraph | 9 |
 | Hardening, Paid-Provider-Switch, VPS via Tailscale | 10 |
 

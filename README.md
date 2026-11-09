@@ -134,6 +134,17 @@ Open https://localhost:8443. Trust the local CA once (command is printed by the 
 - API: `POST /api/instruments/{id}/analysis`, `GET /api/analyses/{id}`, `GET /api/instruments/{id}/analyses`,
   `GET /api/ai/usage`.
 
+## Claude reports (Phase 8)
+- Tab **Claude Reports**: pick a stock and model (Opus 5.5 default, Sonnet 5.5) → versioned report per stock.
+- Numbers come only from a DB snapshot (stored with the report) via tool use (`get_overview`, `get_financials`,
+  `get_valuation`); tables and 5 SVG charts are rendered server-side from the same snapshot. Qualitative sections
+  use the API web search tool; listed sources are checked against the search results; numbers in the text without
+  a DB match are highlighted.
+- Export: "Drucken / PDF" (browser print layout) and Markdown download (`GET /api/reports/{id}/markdown`).
+- Cost guard: shared AI budget `PT_AI_MONTHLY_BUDGET_USD` (default 25), `PT_AI_REPORT_DAILY_LIMIT` (default 5),
+  hard cap 1.50 USD per report (checked before every model turn); cost per report shown in the list.
+- API: `POST /api/instruments/{id}/reports`, `GET /api/reports`, `GET /api/reports/{id}`.
+
 ## Development
 ```bash
 cd backend && uv sync --python 3.12 && uv run pytest && uv run ruff check . && uv run mypy app

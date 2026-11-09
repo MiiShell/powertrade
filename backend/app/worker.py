@@ -11,12 +11,14 @@ from app.db import create_engine
 from app.market import ai
 from app.market import alerts as alert_svc
 from app.market import chart_analysis as analysis_svc
+from app.market import reports as report_svc
 from app.market.details import profiles_due, refresh_profile, store_snapshots
 from app.market.factory import fmp_budget
 from app.market.fundamentals import fundamentals_due, refresh_fundamentals
 from app.market.ingest import active_instrument_ids, ingest_instrument
 from app.market.notify import NotifyError, build_notifier
 from app.market.providers import build_providers
+from app.market.report_agent import AnthropicReportAgent, build_report_agent
 from app.market.stockdata import store_snapshot
 from app.redis_conn import AI_STATUS_KEY, TELEGRAM_STATUS_KEY, WORKER_HEARTBEAT_KEY, redis_settings
 from app.settings import get_settings
@@ -40,6 +42,7 @@ async def startup(ctx: dict[str, Any]) -> None:
     status = ctx["notifier"].name if ctx["notifier"].configured else getattr(ctx["notifier"], "reason", "off")
     await ctx["redis"].set(TELEGRAM_STATUS_KEY, status)
     ctx["analyzer"] = ai.build_analyzer(_settings.providers_mode, _settings.anthropic_api_key)
+    ctx["report_agent"] = build_report_agent(_settings.providers_mode, _settings.anthropic_api_key)
     await ctx["redis"].set(AI_STATUS_KEY, ctx["analyzer"].name)
     await heartbeat(ctx)
 
@@ -47,6 +50,8 @@ async def startup(ctx: dict[str, Any]) -> None:
 async def shutdown(ctx: dict[str, Any]) -> None:
     if isinstance(ctx.get("analyzer"), ai.AnthropicAnalyzer):
         await ctx["analyzer"].aclose()
+    if isinstance(ctx.get("report_agent"), AnthropicReportAgent):
+        await ctx["report_agent"].aclose()
     if ctx.get("http") is not None:
         await ctx["http"].aclose()
     await ctx["engine"].dispose()
@@ -88,8 +93,12 @@ async def chart_analysis(ctx: dict[str, Any], analysis_id: int) -> str:
     return await analysis_svc.run(ctx["engine"], ctx["analyzer"], ctx["redis"], analysis_id)
 
 
+async def report(ctx: dict[str, Any], report_id: int) -> str:
+    return await report_svc.run(ctx["engine"], ctx["report_agent"], report_id)
+
+
 async def expire_analyses(ctx: dict[str, Any]) -> int:
-    return await analysis_svc.expire_stale(ctx["engine"])
+    return await analysis_svc.expire_stale(ctx["engine"]) + await report_svc.expire_stale(ctx["engine"])
 
 
 async def telegram_test(ctx: dict[str, Any]) -> str:
@@ -138,6 +147,7 @@ class WorkerSettings:
         alerts,
         telegram_test,
         func(chart_analysis, timeout=900, max_tries=1),  # Claude call (streaming, high effort)
+        func(report, timeout=1700, max_tries=1),  # tool-use loop with web search
     ]
     cron_jobs: ClassVar[list[Any]] = [
         cron(heartbeat, second={0, 10, 20, 30, 40, 50}, run_at_startup=True),

@@ -164,7 +164,39 @@ export type AnalysisSummary = {
 export type AiUsage = {
   spent_month_usd: number; reserved_usd: number; budget_month_usd: number; remaining_usd: number;
   analyses_today: number; daily_limit: number; calls_month: number; models: Record<string, string>;
-  default_model: string; estimate_usd: Record<string, number>; analyzer: string;
+  default_model: string; estimate_usd: Record<string, number>; analyzer: string; reports_today: number;
+};
+export type ReportSections = {
+  title: string; overview: string; business_model: string; segments: { name: string; description: string }[];
+  investment_thesis: string[]; price_history: string; operating_performance: string; guidance: string;
+  financials_comment: string; balance_sheet: string; capital_allocation: string; valuation: string;
+  opportunities: string[]; risks: string[]; conclusion: string;
+  sources: { title: string; url: string; used_for: string }[];
+};
+export type ReportSnapshot = {
+  as_of: string;
+  instrument: { id: number; symbol: string; name: string; currency: string };
+  profile: { market_cap: number | null; sector: string | null; industry: string | null } | null;
+  market: { price: number | null; date: string | null };
+  annual: Record<string, number | null>[];
+  valuation: {
+    fv_std: number | null; upside_pct: number | null; period_years: string; median_multiples: Record<string, number | null> | null;
+    pb_current: number | null; pb_median_10y: number | null; dividend_yield_pct: number | null;
+  };
+  sources_db: { fundamentals: { source: string | null } | null; profile: string | null } | null;
+};
+export type Report = {
+  id: number; instrument_id: number; symbol: string; name: string; version: number; model: string;
+  status: AnalysisStatus; error: string | null; created_at: string; finished_at: string | null;
+  snapshot: ReportSnapshot; sections: ReportSections | null; charts: Record<string, string>;
+  sources: { title: string; url: string; used_for: string; verified: boolean }[] | null;
+  warnings: { field: string; number: string; context: string }[] | null;
+  stats: { turns: number; web_searches: number; cost_usd: number; model_served: string | null } | null;
+};
+export type ReportListItem = {
+  id: number; instrument_id: number; symbol: string; name: string; version: number; model: string;
+  status: AnalysisStatus; error: string | null; created_at: string; title: string | null; cost_usd: number | null;
+  warnings: number;
 };
 export type Strategy = { id: number | null; name: string; targets: Record<string, number>; weights: Record<string, number> };
 export type SelfCheck = { worker: string; db_write: string; db_read: string; latency_ms: number };
@@ -244,6 +276,10 @@ export const api = {
     request<{ id: number; status: string }>(`/api/instruments/${id}/analysis`, { method: "POST", body: JSON.stringify(body) }),
   analysis: (id: number) => request<Analysis>(`/api/analyses/${id}`),
   analyses: (id: number) => request<{ analyses: AnalysisSummary[] }>(`/api/instruments/${id}/analyses`),
+  reports: () => request<{ reports: ReportListItem[]; cost_cap_usd: number; daily_limit: number }>("/api/reports"),
+  report: (id: number) => request<Report>(`/api/reports/${id}`),
+  startReport: (id: number, model: string) =>
+    request<{ id: number; status: string }>(`/api/instruments/${id}/reports`, { method: "POST", body: JSON.stringify({ model }) }),
   usage: () => request<{ fmp: FmpUsage }>("/api/providers/usage"),
   selfcheck: () => request<SelfCheck>("/api/system/selfcheck", { method: "POST" }),
 };

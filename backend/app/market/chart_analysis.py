@@ -127,7 +127,10 @@ async def usage(engine: AsyncEngine, monthly_budget: float, daily_limit: int) ->
               COALESCE((SELECT sum(cost_usd) FROM ai_call_log
                         WHERE created_at >= date_trunc('month', now())), 0) AS spent_month,
               COALESCE((SELECT sum(reserved_usd) FROM chart_analysis
-                        WHERE status IN ('queued','running')), 0) AS reserved,
+                        WHERE status IN ('queued','running')), 0)
+                + COALESCE((SELECT sum(reserved_usd) FROM report
+                            WHERE status IN ('queued','running')), 0) AS reserved,
+              (SELECT count(*) FROM report WHERE created_at >= date_trunc('day', now())) AS reports_today,
               (SELECT count(*) FROM chart_analysis WHERE created_at >= date_trunc('day', now())) AS today,
               (SELECT count(*) FROM ai_call_log
                 WHERE created_at >= date_trunc('month', now())) AS calls_month""")
@@ -143,6 +146,7 @@ async def usage(engine: AsyncEngine, monthly_budget: float, daily_limit: int) ->
         "budget_month_usd": monthly_budget,
         "remaining_usd": round(max(0.0, monthly_budget - spent - reserved), 4),
         "analyses_today": int(row["today"]),
+        "reports_today": int(row["reports_today"]),
         "daily_limit": daily_limit,
         "calls_month": int(row["calls_month"]),
         "models": ai.MODELS,

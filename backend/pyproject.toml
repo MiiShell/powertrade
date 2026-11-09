@@ -33,6 +33,7 @@ target-version = "py312"
 [tool.ruff.lint]
 select = ["E", "F", "I", "B", "UP", "S", "ASYNC", "RUF"]
 ignore = ["S101"]
+allowed-confusables = ["–", "−"]  # German typography in UI/report texts
 
 [tool.ruff.lint.per-file-ignores]
 "tests/*" = ["S105", "S106"]

@@ -70,8 +70,9 @@ class Settings(BaseSettings):
 
     # Claude chart analysis (worker only holds the key). Cost guard: monthly USD budget + analyses per day.
     anthropic_api_key: str = ""
-    ai_monthly_budget_usd: float = Field(default=10.0, ge=0, le=1000)
+    ai_monthly_budget_usd: float = Field(default=25.0, ge=0, le=1000)  # shared: chart analyses + reports
     ai_daily_limit: int = Field(default=30, ge=0, le=500)
+    ai_report_daily_limit: int = Field(default=5, ge=0, le=100)
 
     login_max_attempts: int = 5
     login_window_s: int = 900
