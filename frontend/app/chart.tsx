@@ -17,6 +17,7 @@ import {
   type UTCTimestamp,
 } from "lightweight-charts";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { AnalysisPanel } from "./analysis";
 import { api, type ChartConfig, type ChartData, type PineScript, type FvSummary, type Stats, type WatchItem } from "./api";
 import { BandFill, toRgba } from "./chart-fill";
 import { Details, big } from "./details";
@@ -444,6 +445,15 @@ export function Chart({ instrumentId, view, onSelect, onView }: {
           {placing ? "Klick in den Chart…" : "+ Linie"}
         </button>
       </div>
+      {data && (
+        <AnalysisPanel
+          instrumentId={data.instrument.id}
+          tf={data.tf}
+          getImage={() => (chartRef.current ? chartImage(chartRef.current) : null)}
+          onAddLevel={(price, kind) => void api.addLevel(data.instrument.id, Math.round(price * 100) / 100,
+            kind === "support" ? "#3fb950" : "#f85149", "Claude").then(() => setVersion((v) => v + 1))}
+        />
+      )}
       <p className="muted small-note">Charts: TradingView Lightweight Charts™. Pine Scripts: PineTS (AGPL-3.0). Keine Anlageberatung.</p>
       </>)}
       {editorOpen && data && (
@@ -454,6 +464,25 @@ export function Chart({ instrumentId, view, onSelect, onView }: {
       )}
     </div>
   );
+}
+
+/** Chart (all panes) as PNG data URL: max 1600 px wide and below the API's 700 KB image limit. */
+function chartImage(chart: IChartApi): string | null {
+  const src = chart.takeScreenshot();
+  if (!src.width || !src.height) return null;
+  let scale = Math.min(1, 1600 / src.width, 2400 / src.height);
+  for (let i = 0; i < 5; i++) {
+    const c = document.createElement("canvas");
+    c.width = Math.max(200, Math.round(src.width * scale));
+    c.height = Math.max(100, Math.round(src.height * scale));
+    const ctx = c.getContext("2d");
+    if (!ctx) return null;
+    ctx.drawImage(src, 0, 0, c.width, c.height);
+    const url = c.toDataURL("image/png");
+    if (url.length < 900_000) return url;
+    scale *= 0.75;
+  }
+  return null;
 }
 
 function WidgetFairValue({ fv, price, onOpen }: { fv: Extract<FvSummary, { available: true }>; price: number; onOpen: () => void }) {

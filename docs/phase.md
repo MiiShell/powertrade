@@ -16,7 +16,7 @@ Stand: 2026-11-09 (Übergabe von Claude-Chat an Claude Code)
 | 5b | Fair Value Pro-Methoden | ⏳ |
 | 6 | Alerts (Telegram + In-App) | ✅ deployt 2026-11-09 (Telegram-Secrets + Browser-Check offen) |
 | 6b | Alerts per E-Mail / Web-Push | ⏳ |
-| 7 | Claude-Chartanalyse | ⏳ |
+| 7 | Claude-Chartanalyse | ✅ deployt 2026-11-09 (API-Key + erster Live-Aufruf offen) |
 | 8 | Claude-Berichte | ⏳ |
 | 9 | Kreuzreferenzen | ⏳ |
 | 10 | Hardening, Paid-Provider, VPS/Tailscale | ⏳ |
@@ -31,10 +31,14 @@ Stand: 2026-11-09 (Übergabe von Claude-Chat an Claude Code)
 3. **Telegram einrichten (manuell)**: Bot bei @BotFather anlegen, Chat-ID ermitteln, dann
    `./scripts/set-secret.sh telegram_bot_token`, `./scripts/set-secret.sh telegram_chat_id`, `./scripts/deploy.sh`,
    im Tab „Alerts“ → „Test-Nachricht“. Browser-Check: Alert anlegen/deaktivieren/löschen, Historie, Badge im Tab.
-4. **Phase 7 – Claude-Chartanalyse** (PROMPT.md F5): Button „Mit Claude analysieren“, PNG + strukturiertes JSON,
-   strukturierte Antwort (Trend, Levels, Momentum, Szenarien, Konfidenz), Kostenbremse, API-Key als Docker-Secret.
+4. **Anthropic API-Key setzen (manuell)**: `./scripts/set-secret.sh anthropic_api_key`, `./scripts/deploy.sh`,
+   dann Chart → „Mit Claude analysieren“ (erst mit Sonnet 5.5 testen). Der echte API-Pfad ist bisher nur mit
+   gemocktem SDK getestet; beim ersten Lauf Kosten im Panel und `ai_call_log` prüfen.
+5. **Phase 8 – Claude-Berichte** (PROMPT.md F6): Abilitato-Stil, Zahlen nur aus der DB via Tool Use, PDF-Export,
+   Kostenbremse (gleiches Budget/`ai_call_log`, feature `report`).
 
 ## Offene Punkte / technische Schulden
+- Claude-Analyse: Prompt-Caching (System-Prompt + Schema) erst bei häufiger Nutzung lohnend; KI-Kosten auch im Status-Tab
 - Smoke-Tests: httpx `verify=<str>` deprecated → `ssl.create_default_context(cafile=...)`
 - Alerts: Intraday-Auswertung erst mit Intraday-Daten sinnvoll; E-Mail/Web-Push (6b)
 - Images auf Digests pinnen (timescaledb, redis, caddy, node, python, uv)

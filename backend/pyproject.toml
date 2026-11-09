@@ -17,6 +17,7 @@ dependencies = [
   "pyotp>=2.10",
   "itsdangerous>=2.2",
   "httpx>=0.28",
+  "anthropic>=2.6.0",
 ]
 
 [dependency-groups]

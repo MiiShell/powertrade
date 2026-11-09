@@ -7,7 +7,7 @@ from fastapi.responses import JSONResponse
 
 from app.db import create_engine
 from app.redis_conn import create_arq_redis
-from app.routes import alerts, auth, chart, details, health, market, pine, stocks, system
+from app.routes import alerts, analysis, auth, chart, details, health, market, pine, stocks, system
 from app.security import LoginThrottle, SessionStore, is_csrf_safe
 from app.settings import Settings, get_settings
 
@@ -61,6 +61,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.include_router(pine.router)
     app.include_router(stocks.router)
     app.include_router(alerts.router)
+    app.include_router(analysis.router)
     return app
 
 

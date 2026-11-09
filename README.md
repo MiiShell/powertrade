@@ -122,6 +122,18 @@ Open https://localhost:8443. Trust the local CA once (command is printed by the 
 - API: `GET/POST /api/alerts`, `PUT/DELETE /api/alerts/{id}`, `GET /api/alerts/events`, `POST /api/alerts/events/read`,
   `POST /api/alerts/telegram/test`.
 
+## Claude chart analysis (Phase 7)
+- Chart view → panel **Claude-Chartanalyse**: sends the chart screenshot (PNG, all panes, max 1600 px / 700 KB) and
+  a JSON context built from the DB (last 150 bars, SMA20/50/200, EMA21, RSI14 + divergences, own lines, pivots,
+  technical rating, 52-week stats, seasonality, fair value for stocks) to the Anthropic API.
+- Model per analysis: Claude Opus 5.5 (default) or Claude Sonnet 5.5; effort `high`, adaptive thinking, structured
+  JSON output, server-side refusal fallback (`fallbacks: "default"`). Runs in the worker (job `chart_analysis`).
+- API key (worker only): `./scripts/set-secret.sh anthropic_api_key`, then `./scripts/deploy.sh`.
+- Cost guard (`.env`): `PT_AI_MONTHLY_BUDGET_USD` (default 10), `PT_AI_DAILY_LIMIT` (default 30). Each analysis
+  reserves its worst-case cost until it finishes; actual usage/cost per call is logged in `ai_call_log`.
+- API: `POST /api/instruments/{id}/analysis`, `GET /api/analyses/{id}`, `GET /api/instruments/{id}/analyses`,
+  `GET /api/ai/usage`.
+
 ## Development
 ```bash
 cd backend && uv sync --python 3.12 && uv run pytest && uv run ruff check . && uv run mypy app

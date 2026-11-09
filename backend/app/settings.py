@@ -7,7 +7,7 @@ from pathlib import Path
 from typing import Any, Literal
 from urllib.parse import quote
 
-from pydantic import field_validator, model_validator
+from pydantic import Field, field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 SECRET_FIELDS = (
@@ -20,9 +20,10 @@ SECRET_FIELDS = (
     "fmp_api_key",
     "telegram_bot_token",
     "telegram_chat_id",
+    "anthropic_api_key",
 )
 # Optional secrets mounted only into some containers (worker): read /run/secrets/<name> if present.
-OPTIONAL_SECRET_FILES = ("telegram_bot_token", "telegram_chat_id")
+OPTIONAL_SECRET_FILES = ("telegram_bot_token", "telegram_chat_id", "anthropic_api_key")
 SECRETS_DIR = Path("/run/secrets")
 
 
@@ -66,6 +67,11 @@ class Settings(BaseSettings):
     # Telegram alerts (worker only). Empty -> alerts are stored in-app only.
     telegram_bot_token: str = ""
     telegram_chat_id: str = ""
+
+    # Claude chart analysis (worker only holds the key). Cost guard: monthly USD budget + analyses per day.
+    anthropic_api_key: str = ""
+    ai_monthly_budget_usd: float = Field(default=10.0, ge=0, le=1000)
+    ai_daily_limit: int = Field(default=30, ge=0, le=500)
 
     login_max_attempts: int = 5
     login_window_s: int = 900

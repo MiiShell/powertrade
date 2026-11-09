@@ -139,6 +139,33 @@ export type AlertEvent = {
   value: number | null; message: string; delivery: "pending" | "sent" | "failed" | "skipped";
   delivery_error: string | null; read_at: string | null;
 };
+export type AnalysisResult = {
+  summary: string;
+  trend: { direction: "up" | "down" | "sideways"; strength: "weak" | "moderate" | "strong"; comment: string };
+  key_levels: { price: number; kind: "support" | "resistance"; strength: "weak" | "moderate" | "strong"; reason: string }[];
+  momentum: { rsi: string; divergences: string; moving_averages: string };
+  patterns: string[];
+  scenarios: { name: "bull" | "base" | "bear"; probability_pct: number; description: string; target: number; invalidation: number }[];
+  risks: string[];
+  confidence: "low" | "medium" | "high";
+  confidence_reason: string;
+};
+export type AnalysisStatus = "queued" | "running" | "done" | "refused" | "failed";
+export type Analysis = {
+  id: number; instrument_id: number; symbol: string; tf: "1d" | "1w"; model: string; effort: string;
+  status: AnalysisStatus; reserved_usd: number; result: AnalysisResult | null; error: string | null;
+  created_at: string; finished_at: string | null; cost_usd: number | null; model_served: string | null;
+};
+export type AnalysisSummary = {
+  id: number; tf: "1d" | "1w"; model: string; status: AnalysisStatus; error: string | null; created_at: string;
+  finished_at: string | null; summary: string | null; confidence: "low" | "medium" | "high" | null;
+  cost_usd: number | null; reserved_usd: number;
+};
+export type AiUsage = {
+  spent_month_usd: number; reserved_usd: number; budget_month_usd: number; remaining_usd: number;
+  analyses_today: number; daily_limit: number; calls_month: number; models: Record<string, string>;
+  default_model: string; estimate_usd: Record<string, number>; analyzer: string;
+};
 export type Strategy = { id: number | null; name: string; targets: Record<string, number>; weights: Record<string, number> };
 export type SelfCheck = { worker: string; db_write: string; db_read: string; latency_ms: number };
 
@@ -212,6 +239,11 @@ export const api = {
   alertEvents: (limit = 100) => request<{ events: AlertEvent[]; unread: number }>(`/api/alerts/events?limit=${limit}`),
   markAlertsRead: () => request<{ marked: number }>("/api/alerts/events/read", { method: "POST" }),
   telegramTest: () => request<{ status: string }>("/api/alerts/telegram/test", { method: "POST" }),
+  aiUsage: () => request<AiUsage>("/api/ai/usage"),
+  startAnalysis: (id: number, body: { tf: string; model: string; image: string }) =>
+    request<{ id: number; status: string }>(`/api/instruments/${id}/analysis`, { method: "POST", body: JSON.stringify(body) }),
+  analysis: (id: number) => request<Analysis>(`/api/analyses/${id}`),
+  analyses: (id: number) => request<{ analyses: AnalysisSummary[] }>(`/api/instruments/${id}/analyses`),
   usage: () => request<{ fmp: FmpUsage }>("/api/providers/usage"),
   selfcheck: () => request<SelfCheck>("/api/system/selfcheck", { method: "POST" }),
 };

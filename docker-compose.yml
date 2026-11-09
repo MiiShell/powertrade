@@ -22,6 +22,8 @@ x-backend: &backend
     PT_ADMIN_USER: ${PT_ADMIN_USER:-admin}
     PT_PROVIDERS_MODE: ${PT_PROVIDERS_MODE:-live}
     PT_SEC_CONTACT: ${PT_SEC_CONTACT:-}
+    PT_AI_MONTHLY_BUDGET_USD: ${PT_AI_MONTHLY_BUDGET_USD:-10}
+    PT_AI_DAILY_LIMIT: ${PT_AI_DAILY_LIMIT:-30}
     PT_DB_APP_PASSWORD_FILE: /run/secrets/db_app_password
     PT_DB_OWNER_PASSWORD_FILE: /run/secrets/db_owner_password
     PT_REDIS_PASSWORD_FILE: /run/secrets/redis_password
@@ -93,8 +95,8 @@ services:
   worker:
     <<: *backend
     command: ["arq", "app.worker.WorkerSettings"]
-    # Telegram secrets only for the worker (read from /run/secrets/<name>, see app/settings.py)
-    secrets: [db_app_password, db_owner_password, redis_password, session_secret, admin_password_hash, admin_totp_secret, fmp_api_key, telegram_bot_token, telegram_chat_id]
+    # Telegram + Anthropic secrets only for the worker (read from /run/secrets/<name>, see app/settings.py)
+    secrets: [db_app_password, db_owner_password, redis_password, session_secret, admin_password_hash, admin_totp_secret, fmp_api_key, telegram_bot_token, telegram_chat_id, anthropic_api_key]
     # edge = outbound internet for data ingestion (Phase 1)
     networks: [data, edge]
     healthcheck:
@@ -159,3 +161,4 @@ secrets:
   fmp_api_key: { file: "${PT_SECRETS_DIR:-./secrets}/fmp_api_key" }
   telegram_bot_token: { file: "${PT_SECRETS_DIR:-./secrets}/telegram_bot_token" }
   telegram_chat_id: { file: "${PT_SECRETS_DIR:-./secrets}/telegram_chat_id" }
+  anthropic_api_key: { file: "${PT_SECRETS_DIR:-./secrets}/anthropic_api_key" }

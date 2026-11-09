@@ -33,7 +33,7 @@ gen_secrets() {
   fi
   [[ -f "$dir/fmp_api_key" ]] || : >"$dir/fmp_api_key"   # optional, set via scripts/set-secret.sh
   local opt
-  for opt in telegram_bot_token telegram_chat_id; do [[ -f "$dir/$opt" ]] || : >"$dir/$opt"; done  # optional
+  for opt in telegram_bot_token telegram_chat_id anthropic_api_key; do [[ -f "$dir/$opt" ]] || : >"$dir/$opt"; done  # optional
   # Readable by container users (postgres, redis, uid 10001); directory stays private.
   chmod 644 "$dir"/*
 }

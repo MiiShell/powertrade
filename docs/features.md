@@ -72,12 +72,20 @@ Stand: 2026-11-09 · Legende: ✅ live (deployt & geprüft) · 🔄 gebaut, Depl
 | Telegram | ✅ | Bot-Token/Chat-ID als Docker-Secrets (nur Worker), Klartext ohne Markup, Test-Nachricht |
 | Tab „Alerts“ | ✅ | Regeln anlegen/aktivieren/löschen, Historie mit Zustellstatus, Ungelesen-Badge |
 
+## Claude-Chartanalyse (Phase 7)
+| Feature | Status | Details |
+|---|---|---|
+| Analyse auf Knopfdruck | ✅ | Chart → Panel „Claude-Chartanalyse“: Screenshot (alle Panes) + JSON-Kontext aus der DB |
+| Modellwahl | ✅ | Claude Opus 5.5 (Standard) oder Sonnet 5.5, Effort „high“, adaptives Thinking, serverseitige Refusal-Fallbacks |
+| Strukturierte Ausgabe | ✅ | Trend, Key Levels (+ Linie übernehmen), Momentum/RSI/Divergenzen, Muster, Bull/Base/Bear mit Ziel + Invalidierung, Risiken, Konfidenz |
+| Kostenbremse | ✅ | Monatsbudget (Standard 10 $) mit Reservierung je Analyse, max. 30/Tag, Kosten je Aufruf in `ai_call_log` |
+| Historie | ✅ | frühere Analysen je Instrument mit Status, Konfidenz, Kosten |
+
 ## Geplant
 | Feature | Phase |
 |---|---|
 | Fair Value Pro-Methoden (KBV-Historie, DCF, Graham, DDM, Blend nach Sektor) | 5b |
 | Alerts per E-Mail / Web-Push | 6b |
-| Claude-Chartanalyse auf Anfrage | 7 |
 | Claude-Berichte (Abilitato-Stil), PDF, Kostenbremse | 8 |
 | Kreuzreferenzen: ETF-Overlap, Sektor-Exposure, Korrelation, Beziehungsgraph | 9 |
 | Hardening, Paid-Provider-Switch, VPS via Tailscale | 10 |

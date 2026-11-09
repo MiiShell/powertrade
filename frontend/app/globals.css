@@ -155,3 +155,15 @@ th.sortable { cursor: pointer; user-select: none; }
 .badge-count { background: var(--accent); color: #fff; border-radius: 999px; padding: 0 7px; font-size: .7rem; margin-left: 6px; vertical-align: middle; }
 tr.unread td { background: #1f232b; }
 td.pre { white-space: pre-line; }
+
+/* Claude chart analysis (Phase 7) */
+.analysis { display: flex; flex-direction: column; gap: 8px; border-top: 1px solid #2a2f3a; padding-top: 10px; }
+.analysis p { margin: 0; }
+.analysis-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 14px; }
+.trend-badge { border-radius: 999px; padding: 2px 10px; font-weight: 600; background: #2a2f3a; }
+.trend-badge.t-up { background: #23863633; color: var(--ok); }
+.trend-badge.t-down { background: #da363333; color: var(--fail); }
+.scenarios { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 10px; }
+.scenario { background: #1f232b; border-radius: 10px; padding: 10px 12px; border-left: 4px solid #8b949e; display: flex; flex-direction: column; gap: 4px; }
+.scenario.s-bull { border-left-color: #3fb950; }
+.scenario.s-bear { border-left-color: #f85149; }

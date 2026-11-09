@@ -5,6 +5,7 @@ from app.settings import Settings
 
 WORKER_HEARTBEAT_KEY = "pt:worker:heartbeat"
 TELEGRAM_STATUS_KEY = "pt:telegram:status"  # set by the worker at startup (never the token)
+AI_STATUS_KEY = "pt:ai:status"  # analyzer name / "none" (never the key)
 
 
 def redis_settings(s: Settings) -> RedisSettings:

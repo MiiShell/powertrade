@@ -4,11 +4,13 @@ import logging
 from datetime import UTC, datetime
 from typing import Any, ClassVar
 
-from arq import cron
+from arq import cron, func
 from sqlalchemy import text
 
 from app.db import create_engine
+from app.market import ai
 from app.market import alerts as alert_svc
+from app.market import chart_analysis as analysis_svc
 from app.market.details import profiles_due, refresh_profile, store_snapshots
 from app.market.factory import fmp_budget
 from app.market.fundamentals import fundamentals_due, refresh_fundamentals
@@ -16,7 +18,7 @@ from app.market.ingest import active_instrument_ids, ingest_instrument
 from app.market.notify import NotifyError, build_notifier
 from app.market.providers import build_providers
 from app.market.stockdata import store_snapshot
-from app.redis_conn import TELEGRAM_STATUS_KEY, WORKER_HEARTBEAT_KEY, redis_settings
+from app.redis_conn import AI_STATUS_KEY, TELEGRAM_STATUS_KEY, WORKER_HEARTBEAT_KEY, redis_settings
 from app.settings import get_settings
 
 _settings = get_settings()
@@ -37,10 +39,14 @@ async def startup(ctx: dict[str, Any]) -> None:
     )
     status = ctx["notifier"].name if ctx["notifier"].configured else getattr(ctx["notifier"], "reason", "off")
     await ctx["redis"].set(TELEGRAM_STATUS_KEY, status)
+    ctx["analyzer"] = ai.build_analyzer(_settings.providers_mode, _settings.anthropic_api_key)
+    await ctx["redis"].set(AI_STATUS_KEY, ctx["analyzer"].name)
     await heartbeat(ctx)
 
 
 async def shutdown(ctx: dict[str, Any]) -> None:
+    if isinstance(ctx.get("analyzer"), ai.AnthropicAnalyzer):
+        await ctx["analyzer"].aclose()
     if ctx.get("http") is not None:
         await ctx["http"].aclose()
     await ctx["engine"].dispose()
@@ -76,6 +82,14 @@ async def ingest(ctx: dict[str, Any], instrument_id: int) -> dict[str, Any]:
 async def alerts(ctx: dict[str, Any], instrument_id: int) -> int:
     """Evaluate one instrument's rules now (after a rule was created/changed)."""
     return await alert_svc.evaluate_instrument(ctx["engine"], ctx["notifier"], instrument_id)
+
+
+async def chart_analysis(ctx: dict[str, Any], analysis_id: int) -> str:
+    return await analysis_svc.run(ctx["engine"], ctx["analyzer"], ctx["redis"], analysis_id)
+
+
+async def expire_analyses(ctx: dict[str, Any]) -> int:
+    return await analysis_svc.expire_stale(ctx["engine"])
 
 
 async def telegram_test(ctx: dict[str, Any]) -> str:
@@ -116,10 +130,19 @@ async def schedule_ingestion(ctx: dict[str, Any]) -> int:
 
 
 class WorkerSettings:
-    functions: ClassVar[list[Any]] = [ping, ingest, profile, fundamentals, alerts, telegram_test]
+    functions: ClassVar[list[Any]] = [
+        ping,
+        ingest,
+        profile,
+        fundamentals,
+        alerts,
+        telegram_test,
+        func(chart_analysis, timeout=900, max_tries=1),  # Claude call (streaming, high effort)
+    ]
     cron_jobs: ClassVar[list[Any]] = [
         cron(heartbeat, second={0, 10, 20, 30, 40, 50}, run_at_startup=True),
         cron(schedule_ingestion, minute=5, run_at_startup=True),
+        cron(expire_analyses, minute={0, 10, 20, 30, 40, 50}),
     ]
     on_startup = startup
     on_shutdown = shutdown

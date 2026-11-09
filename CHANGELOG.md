@@ -15,6 +15,7 @@
 10. Phase 4: Fundamentaldaten (SEC EDGAR / FMP), 3 Qualitäts-Scores, Ranking, Aktienliste – deployt (Migration 0007)
 11. Phase 5: Fair Value Standard (FV-Linien, Bänder, Korridor, Renditerechner), log-lineares Gewinnwachstum – deployt (Migration 0008)
 12. Phase 6: Alerts (Regeln, Flanke + Cooldown, Telegram, Historie, Tab) – deployt (Migration 0009)
+13. Fair-Value-Widget im Chart; Phase 7: Claude-Chartanalyse (Opus/Sonnet 5.5, Kostenbremse) – deployt (Migration 0010)
 
 ### Phasenplan
 | Phase | Inhalt | Status |
@@ -30,7 +31,7 @@
 | 5b | Fair Value Pro-Methoden (KBV, DCF, Graham, DDM) | ⏳ offen |
 | 6 | Alerts (Preis, %-Änderung, MA-Cross, RSI, Fair Value) via Telegram + In-App | ✅ deployt, Telegram-Secrets offen |
 | 6b | Alerts per E-Mail / Web-Push | ⏳ offen |
-| 7 | Claude-Chartanalyse auf Anfrage | ⏳ offen |
+| 7 | Claude-Chartanalyse auf Anfrage | ✅ deployt, API-Key offen |
 | 8 | Claude-Berichte (Abilitato-Stil), PDF-Export, Kostenbremse | ⏳ offen |
 | 9 | Kreuzreferenzen: ETF-Overlap, Sektor-Exposure, Korrelation, Beziehungsgraph | ⏳ offen |
 | 10 | Hardening, Security-Review, Backups, Paid-Provider-Switch, VPS via Tailscale | ⏳ offen |
@@ -250,4 +251,26 @@
 ### Deployed
 - Test deploy green (46 smoke tests, migration roundtrip incl. 0009), `deploy.sh` with backup, readiness ok.
   Telegram not yet configured (empty secrets created) → alerts are in-app only until the secrets are set.
+
+## 2026-11-09 — Phase 7: Claude chart analysis
+### Added
+- `app/market/ai.py`: official `anthropic` SDK (2.6, runtime dependency), streaming Messages call with chart PNG +
+  JSON context, adaptive thinking, effort `high`, structured output (`output_config.format` JSON schema, validated
+  again with Pydantic), server-side refusal fallback (`fallbacks: "default"`, beta `server-side-fallback-2026-07-01`),
+  refusal/max_tokens/invalid-output handling, typed error chain, cost from `usage` (priced by the served model).
+- `app/market/chart_analysis.py`: context from the DB only (bars, indicators, divergences, own lines, pivots,
+  technical rating, stats, seasonality, fair value), budget guard (monthly USD incl. reservations of pending runs,
+  daily count, advisory lock), worker run, history, stale-run expiry (cron every 10 min).
+- Migration `0010`: `chart_analysis`, `ai_call_log`.
+- API: `POST /api/instruments/{id}/analysis` (strict PNG validation: magic bytes, IHDR size, 700 KB),
+  `GET /api/analyses/{id}`, `GET /api/instruments/{id}/analyses`, `GET /api/ai/usage`.
+- UI: panel „Claude-Chartanalyse“ below the chart (model choice, cost estimate, budget, result with key levels
+  → „+ Linie“, scenarios, history).
+- Secret `anthropic_api_key` (worker only, `set-secret.sh` validates `sk-ant-…`), `.env` `PT_AI_MONTHLY_BUDGET_USD`,
+  `PT_AI_DAILY_LIMIT`; fixture analyzer for test deployments (no network).
+- Tests: `tests/test_ai.py` (PNG checks, pricing, schema ↔ model, request shape, refusal, max_tokens, invalid output,
+  fallback pricing), smoke `tests/smoke/test_analysis.py` (validation, worker flow, cost log, usage, crypto).
+### Deployed
+- Test deploy green (50 smoke tests, migration roundtrip incl. 0010), `deploy.sh` with backup, readiness ok.
+  API key not set yet (analyzer `none`); the live API path is covered by mocked-SDK unit tests only.
 
