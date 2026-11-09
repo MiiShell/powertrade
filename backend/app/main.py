@@ -7,10 +7,11 @@ from fastapi.responses import JSONResponse
 
 from app.db import create_engine
 from app.redis_conn import create_arq_redis
-from app.routes import auth, health, system
+from app.routes import auth, chart, details, health, market, pine, system
 from app.security import LoginThrottle, SessionStore, is_csrf_safe
 from app.settings import Settings, get_settings
 
+logging.getLogger("httpx").setLevel(logging.WARNING)  # never log request URLs
 logging.basicConfig(
     level=logging.INFO,
     format='{"ts":"%(asctime)s","level":"%(levelname)s","logger":"%(name)s","msg":"%(message)s"}',
@@ -54,6 +55,10 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.include_router(health.router)
     app.include_router(auth.router)
     app.include_router(system.router)
+    app.include_router(market.router)
+    app.include_router(chart.router)
+    app.include_router(details.router)
+    app.include_router(pine.router)
     return app
 
 

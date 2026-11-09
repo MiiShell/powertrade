@@ -16,10 +16,11 @@ dependencies = [
   "argon2-cffi>=25.1",
   "pyotp>=2.10",
   "itsdangerous>=2.2",
+  "httpx>=0.28",
 ]
 
 [dependency-groups]
-dev = ["pytest>=9", "pytest-asyncio>=1", "httpx>=0.28", "ruff>=0.17", "mypy>=2"]
+dev = ["pytest>=9", "pytest-asyncio>=1", "httpx>=0.28", "ruff>=0.17", "mypy>=2", "fakeredis[lua]>=2.30"]
 
 [tool.uv]
 package = false
@@ -34,7 +35,7 @@ ignore = ["S101"]
 
 [tool.ruff.lint.per-file-ignores]
 "tests/*" = ["S105", "S106"]
-"migrations/*" = ["S608"]
+"migrations/*" = ["S608", "E501"]
 
 [tool.mypy]
 python_version = "3.12"

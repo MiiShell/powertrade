@@ -7,6 +7,10 @@ require curl
 
 [[ -f .env ]] || die ".env missing – run scripts/init-secrets.sh"
 [[ -s secrets/session_secret ]] || die "secrets missing – run scripts/init-secrets.sh"
+if [[ ! -f secrets/fmp_api_key ]]; then
+  : >secrets/fmp_api_key && chmod 644 secrets/fmp_api_key
+  log "created empty secrets/fmp_api_key – set it with: ./scripts/set-secret.sh fmp_api_key"
+fi
 # shellcheck disable=SC1091
 set -a; source .env; set +a
 unset PT_SECRETS_DIR
@@ -37,6 +41,9 @@ fi
 log "step 4/5: migrate + rollout"
 "${COMPOSE[@]}" run --rm migrate
 "${COMPOSE[@]}" up -d --wait --remove-orphans
+# Caddyfile is a bind mount (admin API disabled -> no hot reload): restart so config changes take effect
+"${COMPOSE[@]}" restart caddy >/dev/null
+"${COMPOSE[@]}" up -d --wait caddy
 
 log "step 5/5: verify"
 "${COMPOSE[@]}" cp caddy:/data/caddy/pki/authorities/local/root.crt secrets/caddy-root.crt >/dev/null

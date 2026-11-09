@@ -24,6 +24,10 @@ jobs:
       - run: uv run ruff format --check .
       - run: uv run mypy app
       - run: uv run pytest -q
+      - name: runtime deps import check (no dev deps)
+        run: |
+          UV_PROJECT_ENVIRONMENT=/tmp/prod uv sync --frozen --no-dev --python 3.12
+          PT_ENV=dev /tmp/prod/bin/python -c "import app.main, app.worker"
 
   frontend:
     runs-on: ubuntu-latest

@@ -23,6 +23,9 @@ read -rp "Enable TOTP 2FA? [Y/n] " t
 log "generating secrets"
 gen_secrets "$DIR" "$pw" "$totp" "${PT_ADMIN_USER:-admin}"
 unset pw pw2
+read -rsp "Financial Modeling Prep API key (optional, Enter to skip): " fmp; echo
+printf '%s' "$fmp" >"$DIR/fmp_api_key" && chmod 644 "$DIR/fmp_api_key"
+unset fmp
 if [[ "$totp" == yes ]]; then
   log "TOTP secret (add to your authenticator app):"
   cat "$DIR/admin_totp_secret"

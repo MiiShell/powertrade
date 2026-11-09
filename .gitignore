@@ -80,3 +80,7 @@ reports/generated/
 # ===== PowerTrade =====
 .secrets-test/
 _to_delete/
+
+# generated Pine worker bundle
+frontend/public/pine-worker.js
+frontend/public/pine-worker.LEGAL.txt

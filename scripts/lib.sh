@@ -31,6 +31,7 @@ gen_secrets() {
   else
     : >"$dir/admin_totp_secret"
   fi
+  [[ -f "$dir/fmp_api_key" ]] || : >"$dir/fmp_api_key"   # optional, set via scripts/set-secret.sh
   # Readable by container users (postgres, redis, uid 10001); directory stays private.
   chmod 644 "$dir"/*
 }

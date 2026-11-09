@@ -20,13 +20,15 @@ x-backend: &backend
     PT_ENV: ${PT_ENV:-prod}
     PT_ALLOWED_ORIGINS: ${PT_ALLOWED_ORIGINS:?PT_ALLOWED_ORIGINS must be set}
     PT_ADMIN_USER: ${PT_ADMIN_USER:-admin}
+    PT_PROVIDERS_MODE: ${PT_PROVIDERS_MODE:-live}
     PT_DB_APP_PASSWORD_FILE: /run/secrets/db_app_password
     PT_DB_OWNER_PASSWORD_FILE: /run/secrets/db_owner_password
     PT_REDIS_PASSWORD_FILE: /run/secrets/redis_password
     PT_SESSION_SECRET_FILE: /run/secrets/session_secret
     PT_ADMIN_PASSWORD_HASH_FILE: /run/secrets/admin_password_hash
     PT_ADMIN_TOTP_SECRET_FILE: /run/secrets/admin_totp_secret
-  secrets: [db_app_password, db_owner_password, redis_password, session_secret, admin_password_hash, admin_totp_secret]
+    PT_FMP_API_KEY_FILE: /run/secrets/fmp_api_key
+  secrets: [db_app_password, db_owner_password, redis_password, session_secret, admin_password_hash, admin_totp_secret, fmp_api_key]
 
 services:
   db:
@@ -151,3 +153,4 @@ secrets:
   session_secret: { file: "${PT_SECRETS_DIR:-./secrets}/session_secret" }
   admin_password_hash: { file: "${PT_SECRETS_DIR:-./secrets}/admin_password_hash" }
   admin_totp_secret: { file: "${PT_SECRETS_DIR:-./secrets}/admin_totp_secret" }
+  fmp_api_key: { file: "${PT_SECRETS_DIR:-./secrets}/fmp_api_key" }

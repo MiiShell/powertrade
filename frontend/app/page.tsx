@@ -1,7 +1,8 @@
 "use client";
 
 import { FormEvent, useCallback, useEffect, useState } from "react";
-import { api, type Ready, type SelfCheck } from "./api";
+import { api } from "./api";
+import { Shell } from "./shell";
 
 export default function Home() {
   const [user, setUser] = useState<string | null | undefined>(undefined);
@@ -19,7 +20,8 @@ export default function Home() {
   }, [version]);
 
   if (user === undefined) return <main className="muted">Lade…</main>;
-  return <main>{user ? <Status user={user} onLogout={refresh} /> : <Login onLogin={refresh} />}</main>;
+  if (!user) return <main><Login onLogin={refresh} /></main>;
+  return <Shell user={user} onLogout={refresh} />;
 }
 
 function Login({ onLogin }: { onLogin: () => Promise<void> }) {
@@ -49,45 +51,3 @@ function Login({ onLogin }: { onLogin: () => Promise<void> }) {
   );
 }
 
-function Status({ user, onLogout }: { user: string; onLogout: () => Promise<void> }) {
-  const [ready, setReady] = useState<Ready | null>(null);
-  const [check, setCheck] = useState<SelfCheck | string | null>(null);
-  const [busy, setBusy] = useState(false);
-
-  useEffect(() => {
-    void api.ready().then((r) => setReady(r.data));
-  }, []);
-
-  async function runCheck() {
-    setBusy(true);
-    const r = await api.selfcheck();
-    setBusy(false);
-    setCheck(r.status === 200 && r.data ? r.data : `Fehler (${r.status})`);
-  }
-
-  return (
-    <div className="panel">
-      <h1>PowerTrade</h1>
-      <p className="muted">Angemeldet als {user}</p>
-      <h2>Systemstatus</h2>
-      {ready ? (
-        Object.entries(ready.checks).map(([k, v]) => (
-          <div className="row" key={k}>
-            <span>{k}</span>
-            <span className={v === "ok" ? "ok" : "fail"}>{v}</span>
-          </div>
-        ))
-      ) : (
-        <p className="muted">Lade…</p>
-      )}
-      <button onClick={runCheck} disabled={busy}>Selfcheck (Worker + DB)</button>
-      {typeof check === "string" && <p className="error">{check}</p>}
-      {check && typeof check !== "string" && (
-        <p className="ok">Worker, DB-Write, DB-Read ok – {check.latency_ms} ms</p>
-      )}
-      <button className="secondary" onClick={async () => { await api.logout(); await onLogout(); }}>
-        Abmelden
-      </button>
-    </div>
-  );
-}

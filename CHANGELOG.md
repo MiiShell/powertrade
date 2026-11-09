@@ -1,5 +1,49 @@
 # Changelog
 
+## Projektstatus & Phasenplan (Stand 2026-11-09)
+
+### Umgesetzte Schritte (Kurzfassung)
+1. Planung: `PROMPT.md` (Anforderungen, Architektur, Security), Entscheidungen: Web-App self-hosted (Docker), PostgreSQL + TimescaleDB, Free-Datenquellen → später Paid, Claude Code / Single-User
+2. Repo-Hygiene: `.gitignore`, `.gitleaks.toml` (Secret-Scan in CI statt lokalem pre-commit)
+3. Spezifikation: `docs/SCORING.md` v0.2 (Aktienfinder-Modell + Pro-Methoden), `docs/REFERENCE_AKTIENFINDER.md`
+4. Phase 0: Backend (FastAPI, Auth Argon2id + TOTP, Redis-Sessions, CSRF, Throttling), Worker (ARQ), Frontend (Next.js), Caddy (TLS intern), Compose base/test/prod, Test-Deploy mit Smoke-Tests, Prod-Deploy (Backup → Migration → Rollout → Verify), CI
+5. Phase 1: Marktdaten (Yahoo, Stooq, Kraken, FMP mit Tages-/Bandbreiten-Budget), stündlicher Import, Watchlist, Tages-/Wochen-/Monatskerzen
+6. UI: Tab-Navigation (Watchlist · Chart · Claude Reports · Status)
+7. Phase 2: Chart (Candles, Volumen, SMA/EMA, RSI + Divergenzen, S/R-Linien)
+8. Detailseite: Kopfkarte, Firmenprofil (FMP, bereinigt importiert), technische Ratings (11 Oszillatoren + 15 MAs, Tachos, 1T/1W/1M, Snapshots), Pivots (5 Methoden), Saisonalität (Chart + Heatmap)
+9. Bugfixes aus Deploy-Läufen: Compose-Interpolation, Dateirechte (0600), fehlende Runtime-Dependency `httpx`, Datumstyp für asyncpg
+
+### Phasenplan
+| Phase | Inhalt | Status |
+|---|---|---|
+| 0 | Grundgerüst, Auth, Docker, Test-/Prod-Deploy, CI | ✅ erledigt, lokal deployt |
+| 1 | Datenmodell, Provider-Adapter, Import (inkl. FMP) | ✅ erledigt |
+| 2 | Charting: Candles, SMA/EMA/RSI, Divergenzen, S/R-Linien | ✅ erledigt |
+| 3 | Saisonalität | ✅ erledigt (Teil der Detailseite) |
+| – | Detailseite (Technicals, Pivots, Profil, Kennzahlen) | ✅ erledigt, im Browser geprüft (BTC-Signale vs. TradingView: 25/26 → mit Ichimoku-Fix 26/26 erwartet) |
+| – | Chart-Widgets (Spannen), RSI optional, Pine Scripts (PineTS) + Editor | ✅ erledigt, im Browser geprüft |
+| 4 | Fundamentaldaten-Import, Aktienliste, Qualitäts-Scores (3 Profile) + Ranking | ⏳ offen |
+| 5 | Fair-Value-Engine (Standard + Pro), Bewertungslinien, Prognosekorridor | ⏳ offen |
+| 6 | Alerts (Preis, MA-Cross, RSI, Fair Value) via Telegram/E-Mail/Push | ⏳ offen |
+| 7 | Claude-Chartanalyse auf Anfrage | ⏳ offen |
+| 8 | Claude-Berichte (Abilitato-Stil), PDF-Export, Kostenbremse | ⏳ offen |
+| 9 | Kreuzreferenzen: ETF-Overlap, Sektor-Exposure, Korrelation, Beziehungsgraph | ⏳ offen |
+| 10 | Hardening, Security-Review, Backups, Paid-Provider-Switch, VPS via Tailscale | ⏳ offen |
+
+### Offene Punkte / Technische Schulden
+- Docker-Images auf Digests pinnen (timescaledb, redis, caddy)
+- CSP: `'unsafe-inline'` durch Nonces ersetzen
+- TOTP-Replay-Schutz (Code nur einmal pro Zeitfenster)
+- Backups verschlüsseln (`backups/*.dump`), Restore-Test automatisieren
+- Krypto-Marktkapitalisierung/Profil (Quelle z. B. CoinGecko)
+- Intraday-Timeframes (aktuell nur Tageskerzen)
+- `system_check.nonce`: `varchar` → `text` (Timescale-Hinweis)
+- Technical Ratings: weitere Stichproben gegen TradingView (andere Assets/Timeframes)
+- Pine: Tabellen/Labels/Lines/Boxes rendern; `input()`-Werte im UI änderbar machen
+- Live-Quellen prüfen: `./scripts/check-sources.sh` (insb. FMP-Abdeckung im Free-Plan)
+
+---
+
 ## 2026-11-08 — Planning session
 ### Decisions
 - Platform: self-hosted web app (Docker Compose) instead of Electron
@@ -39,3 +83,87 @@
 - Fix: host files created with 0600 were unreadable for non-root containers (alembic PermissionError on pyproject.toml): Dockerfiles normalize permissions, `scripts/lib.sh` makes repo files world-readable (secrets excluded)
 - Verified: `scripts/test-deploy.sh` passed on Mac (all smoke tests + migration roundtrip)
 - Verified: production deploy (`scripts/deploy.sh`) running at https://localhost:8443 – login, readiness (db/redis/worker) and selfcheck OK (~512 ms)
+
+## 2026-11-09 — Phase 1: market data layer (daily + weekly)
+### Added
+- Migration `0002`: `instrument`, `instrument_source` (provider priority), `watchlist`/`watchlist_item`, `price_bar_1d` hypertable (checks, compression after 180 d), `price_bar_1w` view (Monday buckets), `ingestion_run`; seed watchlist "Standard" (NVDA, BTC, ETH, SOL, XMR, Gold GC=F, Silver SI=F)
+- `app/market/providers.py`: Yahoo, Stooq, Kraken adapters (fixed hosts, symbol allowlist regex, 10 MB/20 s limits, per-provider rate limit, no redirects) + deterministic `FixtureProvider`
+- `app/market/ingest.py`: provider fallback, incremental fetch (7-day overlap), sanitation (invalid/future bars, high/low repair, dedupe), batched idempotent upsert, run logging
+- Worker: `ingest` job, hourly `schedule_ingestion` cron (dedup job ids)
+- API (`app/routes/market.py`): watchlist read/add/remove, manual refresh, bars (1d/1w, range, limit ≤ 10 000), ingestion runs; strict input validation
+- Frontend: watchlist table (price, change %, date, import status, refresh/remove, add form)
+- Tests: 23 new unit tests (parsers, sanitation, SSRF/symbol validation, HTTP errors, fixture determinism); smoke `test_ingestion.py` (auth, seeded ingest, 1d/1w integrity, add/refresh idempotency/remove, validation); shared `conftest.py`
+- `scripts/check-sources.sh`: live provider check from the worker container
+- Settings: `PT_PROVIDERS_MODE` (live|fixture), `PT_HTTP_USER_AGENT`; test deploy runs in fixture mode
+
+## 2026-11-09 — Financial Modeling Prep integration
+### Added
+- `FmpProvider` (stable `historical-price-eod/full`, key via `apikey` header, 402/401/429 handling, 5-year history cap)
+- `app/market/budget.py`: Redis `DailyBudget` – atomic Lua reservation, daily cap 240 paced over the day (burst 20), rolling 30-day bandwidth cap 450 MB, block-for-today on HTTP 429, usage stats
+- Migration `0003`: provider `fmp` allowed; FMP added as priority-2 source for stocks/ETFs (Stooq → 3)
+- API `GET /api/providers/usage`; status panel shows FMP calls/bandwidth
+- Secret `fmp_api_key` (Docker secret, optional): `scripts/set-secret.sh`, prompt in `init-secrets.sh`, auto-created empty in `deploy.sh`
+- `check-sources.sh` checks FMP; tests: 7 new unit tests (budget pacing/caps/block, header auth, history cap, error mapping), smoke test for FMP source + usage
+### Security
+- API key never in URL, env or logs (`httpx` logger set to WARNING)
+- Fix: `httpx` was only a dev dependency → worker crashed in container (ModuleNotFoundError); now a runtime dependency, verified by importing app with prod-only deps
+
+## 2026-11-09 — UI: tab navigation
+### Added
+- `frontend/app/shell.tsx`: top bar with tabs **Watchlist · Chart · Claude Reports · Status** (ARIA tablist, URL hash `#watchlist|#chart|#reports|#status` → reload/back keep the tab), user + logout in the top bar
+- Click on a watchlist symbol opens the Chart tab for that instrument (placeholder until Phase 2); Claude Reports placeholder (Phase 7/8)
+### Changed
+- Status panel (system status, FMP budget, selfcheck) moved to `frontend/app/status.tsx` / Status tab
+
+## 2026-11-09 — Phase 2: charting
+### Added
+- `app/market/indicators.py`: SMA, EMA (SMA seed), RSI (Wilder), pivots, regular RSI divergences; 7 unit tests (StockCharts reference data, edge cases)
+- `GET /api/instruments/{id}/chart`: bars + indicators with warm-up history, RSI + divergences, levels; validated periods (≤ 6, 2–500)
+- Migration `0004`: `chart_level` (price/color/label checks); `POST/DELETE /api/instruments/{id}/levels` (max 50)
+- Frontend `app/chart.tsx`: Lightweight Charts v5 – candles, volume, SMA/EMA lines, RSI pane (30/50/70, divergence lines + BULL/BEAR markers), 1T/1W, ranges, OHLC legend, instrument picker, click-to-place S/R lines with colors, indicator settings in localStorage
+- Tab routing `#chart/<id>`; watchlist symbol opens its chart
+- Smoke tests: chart indicators/warm-up/RSI bounds, validation, levels CRUD
+
+## 2026-11-09 — Asset details page + UI review
+### Added
+- Backend: `app/market/technicals.py` (RSI, Stoch, CCI, ADX, AO, Momentum, MACD, StochRSI, Williams %R, Bull Bear Power, Ultimate Osc.; EMA/SMA 10–200, Ichimoku base, VWMA, HMA; TradingView-style ratings), `app/market/analytics.py` (pivots ×5, seasonality, key stats), `app/market/profile.py` (FMP profile cleaning), `app/market/details.py` (DB services, snapshot persistence, profile import)
+- Migration `0005`: `price_bar_1mo` view, `instrument_profile`, `technical_snapshot`
+- API: `GET /api/instruments/{id}/details`, `GET /api/instruments/{id}/seasonality`, `POST /api/instruments/{id}/profile/refresh`
+- Worker: `profile` job (weekly, ≤ 5/h, FMP-budgeted), technical snapshots after every successful ingest
+- Frontend `app/details.tsx`: header card (volume / day / 52-week bars), company profile, gauges + oscillator/MA tables (1D/1W/1M), pivot table, seasonality chart (years, average, year range) + monthly heatmap; Chart/Details toggle; ⓘ button in watchlist
+- Tests: 14 new unit tests (pivots vs. TradingView example, seasonality, stats, technicals, profile cleaning); smoke `test_ingestion_details.py`
+### Fixed (UI review in browser)
+- Default 1-year range now applied after layout; RSI pane enlarged; price-scale labels show MA values instead of names
+- Fix: technical snapshot insert failed (asyncpg rejects ISO strings for date/timestamptz params) → pass a timezone-aware `datetime`; replaced deprecated `HTTP_422_UNPROCESSABLE_ENTITY`
+
+## 2026-11-09 — Browser review of details page
+### Verified
+- Details page live with real data: NVDA profile imported from FMP (cleaned), technicals 1D/1W/1M, pivots, seasonality (NVDA 2022 −50 %, 2023 +239 % plausible)
+- BTC 1D vs. TradingView screenshot: oscillators 11/11 identical signals; MAs 14/15 (values within ~0.1 %, Yahoo vs. Coinbase data); pivots within ~0.02 %
+### Fixed
+- Ichimoku rating now also requires a bullish/bearish cloud (lead 1 vs. lead 2) like TradingView → was the only differing signal
+- Chart price axis formatted de-DE (thousands separators); buttons no longer wrap
+
+## 2026-11-09 — Chart widgets, optional RSI, Pine Scripts
+### Added
+- Chart: widget row above the chart (price/volume, day range, week range, 52-week range); `GET /api/instruments/{id}/stats`; `range_week` in key stats
+- Indicator menu: built-in RSI + divergences optional (toggle), Pine Scripts toggleable, choice stored in browser
+- Pine runtime: PineTS 0.13.1 in sandboxed Web Worker (`frontend/pine/worker.ts` → `public/pine-worker.js` via esbuild), 10 s timeout, serialised runs; rendering of `plot` (per-bar colours, hidden plots), `hline`, `fill` (custom `BandFill` series primitive)
+- Caddy: separate CSP for `/pine-worker.js` (`'unsafe-eval'`, `connect-src 'none'`); app CSP unchanged (no eval) + `worker-src 'self'`
+- Migration `0006`: `pine_script` (name unique, ≤ 100 KB, built-in flag) + seeded built-ins `[Hoss] OBV RSI` (v4 → v5) and `[Hoss] VWAP Deviation`
+- API: `GET/POST /api/pine/scripts`, `PUT/DELETE /api/pine/scripts/{id}` (built-ins read-only, version check //@version=5|6)
+- Pine editor modal (new from template, edit, test run on current data, save, duplicate, two-step delete)
+- Tests: 7 unit tests (script validation), smoke `test_pine.py` (auth, built-ins, CRUD/validation, worker CSP isolation, range widgets); worker bundle verified in Node: OBV RSI equals independent JS reference (42.8105)
+### Notes
+- PineTS bugs found + worked around in the Hoss scripts: nested `ta.*` inside ternary arguments → NaN; `if`-expression assignment → na
+- License: PineTS is AGPL-3.0 (OK for private use; see README)
+- Fix: `deploy.sh` restarts Caddy after rollout (bind-mounted Caddyfile, no admin API → config changes were not applied); chart range widgets re-laid out (label above values)
+
+## 2026-11-09 — Browser verification: Pine Scripts
+### Verified
+- Worker served with isolated CSP (`'unsafe-eval'`, `connect-src 'none'`) after Caddy restart
+- `[Hoss] VWAP Deviation`: basis + dev-2 lines and both band fills render on the price chart (BTC)
+- `[Hoss] OBV RSI`: own pane with per-bar colours (red ≥ 70, green ≤ 30)
+- Editor: template test run OK, save (auto-enabled in chart), two-step delete; test script removed afterwards
+### Changed
+- Editor button row left-aligned

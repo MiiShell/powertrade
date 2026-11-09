@@ -11,7 +11,7 @@ SECRETS="$ROOT/.secrets-test"
 COMPOSE=(docker compose -p "$PROJECT" --env-file /dev/null -f docker-compose.yml -f docker-compose.test.yml)
 
 export PT_ENV=test PT_SITE_ADDRESS=caddy PT_TLS_MODE=internal PT_ALLOWED_ORIGINS=https://caddy \
-  PT_SECRETS_DIR="$SECRETS" PT_ADMIN_USER=admin
+  PT_SECRETS_DIR="$SECRETS" PT_ADMIN_USER=admin PT_PROVIDERS_MODE=fixture
 
 cleanup() {
   local rc=$?

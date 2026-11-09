@@ -19,11 +19,17 @@
 		Referrer-Policy "no-referrer"
 		Cross-Origin-Opener-Policy "same-origin"
 		Permissions-Policy "camera=(), microphone=(), geolocation=(), payment=(), usb=()"
-		# TODO(Phase 10): replace 'unsafe-inline' with nonces
-		Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'; connect-src 'self'; object-src 'none'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'"
 		-Server
 		-X-Powered-By
 	}
+
+	# Pine Script runtime (PineTS) needs eval -> allowed ONLY inside this dedicated worker, which has no network.
+	@pineworker path /pine-worker.js
+	header @pineworker Content-Security-Policy "default-src 'none'; script-src 'self' 'unsafe-eval'; connect-src 'none'"
+
+	# Everything else: strict CSP without eval. TODO(Phase 10): replace 'unsafe-inline' with nonces
+	@app not path /pine-worker.js
+	header @app Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'; connect-src 'self'; worker-src 'self'; object-src 'none'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'"
 
 	request_body {
 		max_size 1MB

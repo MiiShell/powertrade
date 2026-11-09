@@ -16,6 +16,7 @@ SECRET_FIELDS = (
     "session_secret",
     "admin_password_hash",
     "admin_totp_secret",
+    "fmp_api_key",
 )
 
 
@@ -44,6 +45,15 @@ class Settings(BaseSettings):
     admin_user: str = "admin"
     admin_password_hash: str = ""
     admin_totp_secret: str = ""
+
+    providers_mode: Literal["live", "fixture"] = "live"
+    http_user_agent: str = "Mozilla/5.0 (compatible; PowerTrade/0.1; self-hosted)"
+
+    # Financial Modeling Prep (free plan: 250 calls/day, 500 MB / 30 days). Margins below the hard limits.
+    fmp_api_key: str = ""
+    fmp_daily_limit: int = 240
+    fmp_burst: int = 20
+    fmp_bandwidth_mb_30d: int = 450
 
     login_max_attempts: int = 5
     login_window_s: int = 900
