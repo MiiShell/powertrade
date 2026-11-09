@@ -1,0 +1,37 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(./scripts/test-deploy.sh)",
+      "Bash(./scripts/check-sources.sh)",
+      "Bash(docker compose -p powertrade logs:*)",
+      "Bash(docker compose -p powertrade ps:*)",
+      "Bash(docker compose -p powertrade-test logs:*)",
+      "Bash(uv run pytest:*)",
+      "Bash(uv run ruff:*)",
+      "Bash(uv run mypy:*)",
+      "Bash(uv sync:*)",
+      "Bash(npm run lint)",
+      "Bash(npm run typecheck)",
+      "Bash(npm run build)",
+      "Bash(npm ci)",
+      "Bash(git status)",
+      "Bash(git diff:*)",
+      "Bash(git log:*)"
+    ],
+    "ask": [
+      "Bash(./scripts/deploy.sh)",
+      "Bash(git push:*)",
+      "Bash(git commit:*)",
+      "Bash(docker builder prune:*)",
+      "Bash(docker volume rm:*)"
+    ],
+    "deny": [
+      "Read(./secrets/**)",
+      "Read(./.secrets-test/**)",
+      "Read(./.env)",
+      "Read(./backups/**)",
+      "Bash(cat ./secrets/*)",
+      "Bash(cat ./.env)"
+    ]
+  }
+}

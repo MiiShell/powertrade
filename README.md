@@ -90,6 +90,18 @@ Open https://localhost:8443. Trust the local CA once (command is printed by the 
 - **License note:** PineTS is AGPL-3.0. Fine for this private single-user deployment; if the repo is published or the app is
   offered to others, the project must comply with AGPL-3.0 (or use a commercial PineTS license).
 
+## Fundamentals, quality scores & ranking (Phase 4)
+- Sources: **SEC EDGAR** companyfacts (US stocks, 10–15+ years, free; fair-access User-Agent with `PT_SEC_CONTACT`
+  from `.env`, ≤ 4 req/s) with **FMP** statements + dividends as fallback (non-US / missing EPS; 4 budgeted calls/stock).
+- Cleaning (`app/market/fundamentals.py`): annual periods only (10-K/20-F/40-F, 330–400-day durations), one value per
+  metric and fiscal year (latest filing wins = restatements), finite numbers, capex/dividends positive, FCF derived,
+  fiscal-year label (FY ending Jan–May → previous year), per-share values **split-adjusted** via Yahoo split history
+  (only values filed before a split are adjusted). Stored in `fundamental_fact`, splits in `corporate_action`.
+- Weekly refresh per watchlist stock (≤ 10/h), manual refresh 1×/day; scores snapshot daily in `score_snapshot`.
+- Scores: 3 profiles (Dividendenertrag / Dividendenwachstum / Gewinnwachstum, 1–10) and ranking (0–100) per
+  `docs/SCORING.md`; strategy targets/weights editable (Aktienliste → „Strategie bearbeiten“).
+- UI: tab **Aktienliste** (sortable, score badges, ranking bar) and scorecard/ranking/fundamentals on the details page.
+
 ## Development
 ```bash
 cd backend && uv sync --python 3.12 && uv run pytest && uv run ruff check . && uv run mypy app

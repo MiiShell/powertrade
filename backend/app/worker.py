@@ -10,8 +10,10 @@ from sqlalchemy import text
 from app.db import create_engine
 from app.market.details import profiles_due, refresh_profile, store_snapshots
 from app.market.factory import fmp_budget
+from app.market.fundamentals import fundamentals_due, refresh_fundamentals
 from app.market.ingest import active_instrument_ids, ingest_instrument
 from app.market.providers import build_providers
+from app.market.stockdata import store_snapshot
 from app.redis_conn import WORKER_HEARTBEAT_KEY, redis_settings
 from app.settings import get_settings
 
@@ -26,6 +28,7 @@ async def startup(ctx: dict[str, Any]) -> None:
         _settings.http_user_agent,
         fmp_api_key=_settings.fmp_api_key,
         fmp_budget=fmp_budget(ctx["redis"], _settings),
+        sec_contact=_settings.sec_contact,
     )
     await heartbeat(ctx)
 
@@ -49,7 +52,16 @@ async def ping(ctx: dict[str, Any], nonce: str) -> str:
 async def ingest(ctx: dict[str, Any], instrument_id: int) -> dict[str, Any]:
     r = await ingest_instrument(ctx["engine"], ctx["providers"], instrument_id)
     snaps = await store_snapshots(ctx["engine"], instrument_id) if r.status == "success" else 0
+    if r.status == "success":
+        await store_snapshot(ctx["engine"], instrument_id)  # daily quality-score snapshot (price-dependent)
     return {"status": r.status, "provider": r.provider, "rows": r.rows, "error": r.error, "snapshots": snaps}
+
+
+async def fundamentals(ctx: dict[str, Any], instrument_id: int) -> str:
+    status = await refresh_fundamentals(ctx["engine"], ctx["providers"], ctx["redis"], instrument_id)
+    if status == "success":
+        await store_snapshot(ctx["engine"], instrument_id)
+    return status
 
 
 async def profile(ctx: dict[str, Any], instrument_id: int) -> str:
@@ -65,11 +77,14 @@ async def schedule_ingestion(ctx: dict[str, Any]) -> int:
     # company profiles: max 5 per hour, refreshed weekly (FMP budget friendly)
     for iid in await profiles_due(ctx["engine"], limit=5):
         await ctx["redis"].enqueue_job("profile", iid, _job_id=f"profile:{iid}:{hour}")
+    # annual fundamentals: weekly per stock, max 10 per hour
+    for iid in await fundamentals_due(ctx["engine"], limit=10):
+        await ctx["redis"].enqueue_job("fundamentals", iid, _job_id=f"fund:{iid}:{hour}")
     return len(ids)
 
 
 class WorkerSettings:
-    functions: ClassVar[list[Any]] = [ping, ingest, profile]
+    functions: ClassVar[list[Any]] = [ping, ingest, profile, fundamentals]
     cron_jobs: ClassVar[list[Any]] = [
         cron(heartbeat, second={0, 10, 20, 30, 40, 50}, run_at_startup=True),
         cron(schedule_ingestion, minute=5, run_at_startup=True),

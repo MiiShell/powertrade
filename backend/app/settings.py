@@ -1,12 +1,13 @@
 """Runtime configuration. Secrets are read from `PT_<NAME>_FILE` (Docker secrets) or `PT_<NAME>`."""
 
 import os
+import re
 from functools import lru_cache
 from pathlib import Path
 from typing import Any, Literal
 from urllib.parse import quote
 
-from pydantic import model_validator
+from pydantic import field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 SECRET_FIELDS = (
@@ -51,6 +52,8 @@ class Settings(BaseSettings):
 
     # Financial Modeling Prep (free plan: 250 calls/day, 500 MB / 30 days). Margins below the hard limits.
     fmp_api_key: str = ""
+    # SEC EDGAR fair-access policy: requests must identify a contact (e-mail). Empty -> EDGAR disabled.
+    sec_contact: str = ""
     fmp_daily_limit: int = 240
     fmp_burst: int = 20
     fmp_bandwidth_mb_30d: int = 450
@@ -83,6 +86,14 @@ class Settings(BaseSettings):
         if len(self.session_secret) < 32:
             raise ValueError("session_secret must be at least 32 characters")
         return self
+
+    @field_validator("sec_contact")
+    @classmethod
+    def _contact(cls, v: str) -> str:
+        v = v.strip()
+        if v and not re.fullmatch(r"[^@\s]{1,64}@[^@\s]{1,190}\.[A-Za-z]{2,}", v):
+            raise ValueError("sec_contact must be an e-mail address")
+        return v
 
     @property
     def origins(self) -> set[str]:

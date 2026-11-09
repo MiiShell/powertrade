@@ -21,6 +21,7 @@ x-backend: &backend
     PT_ALLOWED_ORIGINS: ${PT_ALLOWED_ORIGINS:?PT_ALLOWED_ORIGINS must be set}
     PT_ADMIN_USER: ${PT_ADMIN_USER:-admin}
     PT_PROVIDERS_MODE: ${PT_PROVIDERS_MODE:-live}
+    PT_SEC_CONTACT: ${PT_SEC_CONTACT:-}
     PT_DB_APP_PASSWORD_FILE: /run/secrets/db_app_password
     PT_DB_OWNER_PASSWORD_FILE: /run/secrets/db_owner_password
     PT_REDIS_PASSWORD_FILE: /run/secrets/redis_password

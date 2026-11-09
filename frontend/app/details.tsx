@@ -3,6 +3,7 @@
 import { ColorType, LineSeries, LineStyle, createChart, type UTCTimestamp } from "lightweight-charts";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { api, type Counts, type Details as DetailsData, type Seasonality, type TaGroup, type Tf } from "./api";
+import { ScorecardPanel } from "./scorecard";
 
 const LABELS: Record<string, string> = {
   strong_buy: "Strong buy", buy: "Buy", neutral: "Neutral", sell: "Sell", strong_sell: "Strong sell",
@@ -63,6 +64,8 @@ export function Details({ instrumentId }: { instrumentId: number }) {
           <ProfileBlock data={data} />
         </div>
       )}
+
+      {data.instrument.type === "stock" && <ScorecardPanel instrumentId={instrumentId} />}
 
       <div className="panel">
         <div className="row wrap">

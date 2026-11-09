@@ -84,3 +84,6 @@ _to_delete/
 # generated Pine worker bundle
 frontend/public/pine-worker.js
 frontend/public/pine-worker.LEGAL.txt
+
+# Claude Code local settings
+.claude/settings.local.json

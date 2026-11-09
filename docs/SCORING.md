@@ -107,6 +107,15 @@ Stocks only. ETFs: aggregated scores = holdings-weighted average (Phase 9), plus
 - Unit tests per formula with hand-calculated fixtures (negative EPS, no dividend, financials, < 5y history, net cash).
 - Golden tests: 3 tickers (dividend grower, growth stock, bank) with snapshot outputs.
 
+## 8. Implementation notes (v0.2.1, Phase 4)
+- EPS basis: diluted EPS from filings (adjusted EPS not available from free sources); per-share data split-adjusted.
+- Gewinnwachstum: if the EPS trendline start/end is <= 0 the criterion scores **0 points** (penalised, not N/A).
+- Discount uses an annual approximation of FV_std until Phase 5: median P/E over the last 10 fiscal years
+  (FY-end close / EPS, 0 < P/E <= 100, min. 3 years) x latest EPS.
+- Dividend yield = last fiscal-year DPS / current price.
+- Financials (sector Financial Services/Financials/Banks/Insurance): payback years N/A.
+
 ## Changelog
+- v0.2.1: implementation notes (EPS basis, negative growth = 0 points, annual FV_std approximation).
 - v0.2: Aktienfinder-style standard model (3 profiles 1–10, ranking 0–100, multiple-based FV with bands & corridor); v0.1 methods moved to Pro.
 - v0.1: single scorecard 0–15 + blended FV (superseded).

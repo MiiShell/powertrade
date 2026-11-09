@@ -4,10 +4,12 @@ import { useCallback, useEffect, useState } from "react";
 import { api } from "./api";
 import { Chart } from "./chart";
 import { Status } from "./status";
+import { Stocks } from "./stocks";
 import { Watchlist } from "./watchlist";
 
 const TABS = [
   { id: "watchlist", label: "Watchlist" },
+  { id: "stocks", label: "Aktienliste" },
   { id: "chart", label: "Chart" },
   { id: "reports", label: "Claude Reports" },
   { id: "status", label: "Status" },
@@ -78,6 +80,7 @@ export function Shell({ user, onLogout }: { user: string; onLogout: () => Promis
 
       <section role="tabpanel" id={`panel-${tab}`} aria-labelledby={`tab-${tab}`} className="content">
         {tab === "watchlist" && <Watchlist onOpenChart={openChart} />}
+        {tab === "stocks" && <Stocks onOpen={(id) => openChart({ id }, "details")} />}
         {tab === "chart" && (
           <Chart
             instrumentId={selected}

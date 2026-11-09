@@ -34,6 +34,16 @@ def upgrade() -> None:
         )
     """)
     op.execute("""
+        CREATE TABLE corporate_action (
+            instrument_id   bigint NOT NULL REFERENCES instrument(id) ON DELETE CASCADE,
+            ex_date         date NOT NULL,
+            kind            text NOT NULL CHECK (kind IN ('split')),
+            ratio           double precision NOT NULL CHECK (ratio > 0),
+            source          text NOT NULL,
+            PRIMARY KEY (instrument_id, ex_date, kind)
+        )
+    """)
+    op.execute("""
         CREATE TABLE fundamentals_run (
             instrument_id   bigint PRIMARY KEY REFERENCES instrument(id) ON DELETE CASCADE,
             source          text,
@@ -78,5 +88,11 @@ def upgrade() -> None:
 
 
 def downgrade() -> None:
-    for t in ("ranking_strategy", "score_snapshot", "fundamentals_run", "fundamental_fact"):
+    for t in (
+        "ranking_strategy",
+        "score_snapshot",
+        "fundamentals_run",
+        "corporate_action",
+        "fundamental_fact",
+    ):
         op.execute(f"DROP TABLE IF EXISTS {t}")

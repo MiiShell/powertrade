@@ -22,7 +22,7 @@
 | 3 | Saisonalität | ✅ erledigt (Teil der Detailseite) |
 | – | Detailseite (Technicals, Pivots, Profil, Kennzahlen) | ✅ erledigt, im Browser geprüft (BTC-Signale vs. TradingView: 25/26 → mit Ichimoku-Fix 26/26 erwartet) |
 | – | Chart-Widgets (Spannen), RSI optional, Pine Scripts (PineTS) + Editor | ✅ erledigt, im Browser geprüft |
-| 4 | Fundamentaldaten-Import, Aktienliste, Qualitäts-Scores (3 Profile) + Ranking | ⏳ offen |
+| 4 | Fundamentaldaten-Import, Aktienliste, Qualitäts-Scores (3 Profile) + Ranking | 🔄 gebaut, Deploy + Browser-Check offen |
 | 5 | Fair-Value-Engine (Standard + Pro), Bewertungslinien, Prognosekorridor | ⏳ offen |
 | 6 | Alerts (Preis, MA-Cross, RSI, Fair Value) via Telegram/E-Mail/Push | ⏳ offen |
 | 7 | Claude-Chartanalyse auf Anfrage | ⏳ offen |
@@ -167,3 +167,23 @@
 - Editor: template test run OK, save (auto-enabled in chart), two-step delete; test script removed afterwards
 ### Changed
 - Editor button row left-aligned
+
+## 2026-11-09 — Phase 4: fundamentals, quality scores, ranking
+### Decisions
+- Sources: SEC EDGAR (US, long history) + FMP fallback; SEC contact = account e-mail (`PT_SEC_CONTACT` in `.env`, sent only to sec.gov); universe = watchlist stocks
+### Added
+- Migration `0007`: `fundamental_fact` (annual, long format), `corporate_action` (splits), `fundamentals_run`, `score_snapshot`, `ranking_strategy` (default "Standard")
+- `SecProvider` (ticker map cached 7 d in Redis, companyfacts, fair-access UA, 80 MB cap), FMP `get_raw` with endpoint allow-list (statements, dividends, profile), Yahoo split history
+- `app/market/fundamentals.py`: EDGAR/FMP parsing + cleaning, split adjustment by filing date, upsert (SEC beats FMP), weekly refresh job (≤ 10/h)
+- `app/market/scores.py`: signed-R² stability, trendline CAGR, payback years, annual FV_std + discount, 3 profile scores, ranking 0–100
+- API: `GET /api/stocks`, `GET /api/instruments/{id}/scorecard`, `POST /api/instruments/{id}/fundamentals/refresh`, `GET/PUT /api/ranking/strategy`
+- UI: tab „Aktienliste“ (sortable, score badges, ranking bars, strategy editor); details page: Aktienfinder-style scorecard (10-segment bars), ranking Soll/Ist, 10-year fundamentals table
+- Tests: 12 new unit tests (EDGAR filtering/restatements, split adjustment, Yahoo splits, FMP parsing, scores, ranking); smoke `test_stocks.py`
+
+## 2026-11-09 — Handover to Claude Code
+### Added
+- `CLAUDE.md`: working agreement (German replies, English code, clarify first, correct user, changelog per session), architecture, commands, Definition of Done, learned gotchas, security baseline
+- `.claude/settings.json`: allow common test/lint/log commands, ask for deploy/commit/push/prune, deny reading secrets/.env/backups
+- `docs/features.md`: feature inventory with status + API overview
+- `docs/phase.md`: phase status, concrete next steps (finish Phase 4 deploy, Phase 5 fair value, Phase 6 alerts), tech debt
+- `.gitignore`: `.claude/settings.local.json`

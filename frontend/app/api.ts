@@ -73,6 +73,28 @@ export type Seasonality = {
   monthly_stats: Record<string, { avg: number; positive_pct: number; n: number }>;
 };
 export type PineScript = { id: number; name: string; source: string; builtin: boolean; created_at: string; updated_at: string };
+export type Criterion = { criterion: string; value: number | "inf" | null; scale: [number, number] | null; points: number | null; warn: boolean };
+export type ProfileScore = { score: number | null; criteria: Criterion[]; reason?: string };
+export type RankRow = { criterion: string; target: number; actual: number | "inf" | null; achievement: number; weight: number };
+export type Scorecard = {
+  price: number | null;
+  metrics: Record<string, number | string | boolean | null | string[]>;
+  profiles: Record<"dividend_yield" | "dividend_growth" | "earnings_growth", ProfileScore> | null;
+  ranking: { points: number; criteria: RankRow[] } | null;
+  strategy: { id: number | null; name: string };
+  fundamentals: Record<string, [number, number][]>;
+  run: { source: string | null; status: string; facts: number; error: string | null; finished_at: string } | null;
+};
+export type StockRow = {
+  id: number; symbol: string; name: string; currency: string; country: string | null; industry: string | null;
+  sector: string | null; market_cap: number | null; price: number | null;
+  scores: { dividend_yield: number | null; dividend_growth: number | null; earnings_growth: number | null };
+  ranking_points: number | null; dividend_yield: number | null; dividend_cagr_5y: number | null;
+  dividend_not_cut_years: number | null; earnings_stability: number | null; earnings_growth_5y: number | null;
+  payback_years: number | "inf" | null; fair_value: number | null; discount: number | null;
+  performance_5y: number | null; fundamentals: string | null;
+};
+export type Strategy = { id: number | null; name: string; targets: Record<string, number>; weights: Record<string, number> };
 export type SelfCheck = { worker: string; db_write: string; db_read: string; latency_ms: number };
 
 async function request<T>(path: string, init?: RequestInit): Promise<{ status: number; data: T | null }> {
@@ -125,6 +147,13 @@ export const api = {
   updatePine: (id: number, body: { name: string; source: string }) =>
     request<PineScript>(`/api/pine/scripts/${id}`, { method: "PUT", body: JSON.stringify(body) }),
   deletePine: (id: number) => request<null>(`/api/pine/scripts/${id}`, { method: "DELETE" }),
+  stocks: () => request<{ strategy: string; stocks: StockRow[] }>("/api/stocks"),
+  scorecard: (id: number) => request<Scorecard>(`/api/instruments/${id}/scorecard`),
+  refreshFundamentals: (id: number) =>
+    request<{ status: string }>(`/api/instruments/${id}/fundamentals/refresh`, { method: "POST" }),
+  strategy: () => request<Strategy>("/api/ranking/strategy"),
+  saveStrategy: (s: { name: string; targets: Record<string, number>; weights: Record<string, number> }) =>
+    request<Strategy>("/api/ranking/strategy", { method: "PUT", body: JSON.stringify(s) }),
   usage: () => request<{ fmp: FmpUsage }>("/api/providers/usage"),
   selfcheck: () => request<SelfCheck>("/api/system/selfcheck", { method: "POST" }),
 };
